@@ -28,6 +28,7 @@ AC_PROG_CXXCPP
 AC_PROG_CXX_C_O
 
 PKG_CHECK_MODULES([LIBMOLDEO], [libmoldeo] ,has_libmoldeo=yes)
+PKG_CHECK_MODULES([SNDFILE], [sndfile] ,has_sndfile=yes)
 
 host_name="default"
 
@@ -66,13 +67,13 @@ AC_SUBST([HOSTLDFLAGS],$host_ldflags)
 
 if test "x$host_name" = "xosx" ; then
 	#use framework OpenAL
-	echo "Using -framework OpenAL"
+	echo "Using -framework OpenAL (-framework CoreAudio))"
 	PKG_CHECK_MODULES([FREEALUT], [freealut] ,has_freealut=yes)
-	PKG_CHECK_MODULES([SDL2MIXER], [sndfile] ,has_sdl2mixer=yes)
 
 else
 	dnl check for alut
 	PKG_CHECK_MODULES([FREEALUT], [freealut] ,has_freealut=yes)
+	PKG_CHECK_MODULES([PORTAUDIO], [portaudio] ,has_portaudio=yes)
 fi
 
 dnl autoscan results
