@@ -135,7 +135,9 @@ echo "GLES: $with_gles"
 echo "HOST: $host_name"
 echo "HOSTCFLAGS: $host_cflags"
 echo "HOSTLDFLAGS: $host_ldflags"
-echo "SDL2MIXER: $has_sdl2mixer"
+echo "SNDFILE: $has_sndfile"
+echo "PORTAUDIO: $has_portaudio"
+
 echo "DEBUG: $debug"
 
 AC_OUTPUT(Makefile)
