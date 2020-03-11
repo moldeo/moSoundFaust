@@ -1,4 +1,4 @@
-#define PORTAUDIO_DRIVER 1
+
 /* ------------------------------------------------------------
 author: "JOS, revised by RM"
 name: "spectralLevel"
@@ -1716,7 +1716,7 @@ struct JSONUIDecoderReal {
         ReflectFunction fReflect;
         ModifyFunction fModify;
 
-    #if defined(TARGET_OS_IPHONE) || defined(WIN32)
+    #if defined(TARGET_OS_IPHONE) || defined(WIN32) || MO_MACOSX
         ZoneParam(int index, ReflectFunction reflect = nullptr, ModifyFunction modify = nullptr)
         :fIndex(index), fReflect(reflect), fModify(modify)
         {}

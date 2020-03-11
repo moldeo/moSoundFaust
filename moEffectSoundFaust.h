@@ -36,7 +36,7 @@
 #include "moTimeManager.h"
 #include "moSoundManager.h"
 
-#define MO_FREEALUT
+#define MO_FREEALUT 1
 
 #ifdef MO_FREEALUT
 #include <AL/alut.h>
@@ -57,6 +57,15 @@
 //#define DYNAMIC_DSP
 //#define OSCCTRL
 //#define JUCE_DRIVER
+#ifdef MO_LINUX
+#define PORTAUDIO_DRIVER 1
+#endif
+
+#ifdef MO_MACOSX
+#define constexpr const
+#define COREAUDIO_DRIVER 1
+#endif
+
 
 #include "dsp-faust-portaudio/DspFaust.h"
 
