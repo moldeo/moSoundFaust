@@ -140,10 +140,7 @@ class moSoundFaustAudio : public moSound3D {
 
   public:
 
-    moSoundFaustAudio();
-		moSoundFaustAudio( DspFaust* p_pDspFaust) : moSoundFaustAudio() {
-			m_pDspFaust	= p_pDspFaust;
-		}
+		moSoundFaustAudio( DspFaust* p_pDspFaust=NULL);
 		void SetDsp( DspFaust* p_pDspFaust ) {
 			m_pDspFaust	= p_pDspFaust;
 		}
