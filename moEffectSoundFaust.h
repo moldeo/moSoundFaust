@@ -42,6 +42,22 @@
 #include <AL/alut.h>
 #endif
 
+
+/**
+* Embedding Faust Here:
+* @param
+*     #define SOUNDFILE for using sndfile library and mp3/wav files
+*     #define DYNAMIC_DSP for compiling DSP on the fly
+*/
+
+#define SOUNDFILE 1
+#define MOLDEO_SOUND_FAUST_PLUGIN 1
+
+//#define MIDICTRL
+//#define DYNAMIC_DSP
+//#define OSCCTRL
+//#define JUCE_DRIVER
+
 #include "dsp-faust-portaudio/DspFaust.h"
 
 
@@ -64,7 +80,15 @@ enum moSoundFaustParamIndex {
 	SOUNDFAUST_SPEEDOFSOUND,
 	SOUNDFAUST_PITCH,
 	SOUNDFAUST_VOLUME,
+	SOUNDFAUST_VOLUME_IN,
 	SOUNDFAUST_BALANCE,
+	SOUNDFAUST_BALANCE_MONO_STEREO,
+
+	SOUNDFAUST_SHOWAUDIODATA,
+	SOUNDFAUST_DISPLAY_X,
+	SOUNDFAUST_DISPLAY_Y,
+	SOUNDFAUST_DISPLAY_WIDTH,
+	SOUNDFAUST_DISPLAY_HEIGHT,
 
 	SOUNDFAUST_TEXTURE,
 	SOUNDFAUST_BLENDING,
@@ -92,12 +116,29 @@ enum moSoundFaustParamIndex {
 class JSONUITemplatedDecoder;
 class JSONUIFloatDecoder;
 
-class moSoundFaustAL : public moSound3D {
+enum moSoundFaustMode {
+	MO_SOUND_MODE_SINGLE = 0,
+	MO_SOUND_MODE_LONGPLAY = 1,
+	MO_SOUND_MODE_SCRIPT = 2,
+	MO_SOUNDFAUST_FILTER = 3,
+	MO_SOUND_MODE_LAUNCH_AND_WAIT = 4,
+	MO_SOUND_MODE_LAUNCH_NEXT_AND_WAIT = 5
+};
+
+struct Soundfile;
+
+class moSoundFaustAudio : public moSound3D {
 
   public:
 
-    moSoundFaustAL();
-    virtual ~moSoundFaustAL();
+    moSoundFaustAudio();
+		moSoundFaustAudio( DspFaust* p_pDspFaust) : moSoundFaustAudio() {
+			m_pDspFaust	= p_pDspFaust;
+		}
+		void SetDsp( DspFaust* p_pDspFaust ) {
+			m_pDspFaust	= p_pDspFaust;
+		}
+    virtual ~moSoundFaustAudio();
 
     virtual MOboolean  Init();
     virtual MOboolean  Finish();
@@ -113,7 +154,9 @@ class moSoundFaustAL : public moSound3D {
     virtual moStreamState State();
     virtual void Update();
     virtual void SetVolume( float gain );
+		virtual void SetVolumeIn( float gain );
     virtual void SetBalance( float gain );
+		virtual void SetBalanceMonoStereo( float gain );
     virtual float GetVolume();
     virtual float GetActualSampleVolume();
     virtual void SetPitch( float pitch );
@@ -121,6 +164,8 @@ class moSoundFaustAL : public moSound3D {
     virtual void SetLoop( bool loop );
     virtual void SetSpeedOfSound( float speedofsound );
     virtual bool IsPlaying();
+		virtual MOulong GetDuration();
+		virtual MOulong GetPosition();
 
     MOboolean BuildEmpty( MOuint p_size );
     MOboolean BuildFromBuffer( MOuint p_size, GLvoid* p_buffer );
@@ -141,18 +186,25 @@ class moSoundFaustAL : public moSound3D {
     void SetDirection( float x, float y, float z );
     void SetDirection( const moVector3f& v_dir ) { SetDirection(v_dir.X(), v_dir.Y(), v_dir.Z() );  }
 
+		void Seek( long position );
+
+		long m_SoundfileIndex;
+		Soundfile*	m_pSoundfile;
+
+		float m_BalanceMonoStereo = 1.0;
 
     int m_iAlState;
 
     MOuint		    m_Buffers[NUMBUFFERS];
 
-
+/*
     ALenum			m_eBufferFormat;
     ALsizei	m_ulDataSize;
     ALsizei	m_ulFrequency;
     ALsizei	m_ulFormat;
     ALsizei	m_ulBufferSize;
-    ALsizei	m_ulBytesWritten;
+    ALsizei	m_ulBytesWritten;*/
+
     void *			m_pData;
     ALboolean	m_ulLoop;
 
@@ -188,6 +240,7 @@ class moSoundFaustAL : public moSound3D {
 
       MOint			m_BufferSize;
     */
+		DspFaust*     m_pDspFaust;
 
 };
 
@@ -223,6 +276,8 @@ public:
   int alutCheckError(const char * p_message);
   void ShowBufferInfo( ALint p_BufferId );
 
+	void DrawDisplayInfo( MOfloat x, MOfloat y);
+
   int outports_outlet_base_index;
 
 
@@ -236,7 +291,7 @@ private:
   long    last_ticks;
 
   //moGsGraph   m_Audio;
-  moSoundFaustAL*   m_pAudio;
+  moSoundFaustAudio*   m_pAudio;
   DspFaust*     m_pDspFaust;
 
   moText      m_SoundFaustFilename;
@@ -250,9 +305,18 @@ private:
   bool    m_bLoop;
   float   m_fPitch;
   float   m_fVolume;
+	float   m_fVolumeIn;
   float   m_fSpeedOfSound;
 
   int i_PlayedTimes;
+	moSoundFaustMode m_iPlayMode;
+
+	float         m_DisplayX;
+	float         m_DisplayY;
+	float         m_DisplayW;
+	float         m_DisplayH;
+	long					m_FramesLength;
+	long					m_FramePosition;
 
   MOint Tx, Ty, Tz;
   MOfloat Sx, Sy, Sz;
@@ -263,7 +327,6 @@ private:
   moVector3f m_vDirection;
   moVector3f m_vSpeed;
 
-  int         m_FramePosition;
   float     m_UserPosition;
 
   static bool m_bAlutInit;

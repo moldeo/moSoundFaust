@@ -34,10 +34,14 @@ class audio;
 class dsp;
 class dsp_factory;
 
+#ifdef MOLDEO_SOUND_FAUST_PLUGIN
+struct Soundfile;
+#endif
+
 class DspFaust
 {
 
-    private:
+    public:
 
         FaustPolyEngine* fPolyEngine;
 
@@ -193,7 +197,7 @@ class DspFaust
         // Terminates all the active voices, gently (with release when hard = false or immediately when hard = true).
         //--------------------------------------------------------
         void allNotesOff(bool hard = false);
-   
+
         //-------`void propagateMidi(int count, double time, int type, int channel, int data1, int data2)`--------
         // Take a raw MIDI message and propagate it to the Faust
         // DSP object. This method can be used concurrently with
@@ -332,7 +336,7 @@ class DspFaust
         //
         // * `id`: id of the parameter
         //--------------------------------------------------------
-        const char* getParamAddress(int);        
+        const char* getParamAddress(int);
 
         //----`const char* getVoiceParamAddress(int id, long voice)`-----
         // Returns the address (path) of a parameter in function
@@ -414,7 +418,7 @@ class DspFaust
         //
         // * `address`: address (path) of the parameter
         //--------------------------------------------------------
-        const char* getMetadata(const char*, const char*);        
+        const char* getMetadata(const char*, const char*);
 
         //----`const char* getMetadata(int id, const char* key)`---------------
         // Returns the metadataof a parameter in function of
@@ -502,6 +506,20 @@ class DspFaust
         bool isOSCOn();
 
         int getScreenColor();
+
+#ifdef MOLDEO_SOUND_FAUST_PLUGIN
+        int addSoundfile( const char* label, const char* filename, int force_index = -1 );//force_index to replace file
+        int GetPlayingSFIndex();
+        bool SetPlayingSFIndex(int index);
+        Soundfile **getSoundfiles();
+        int       getSoundfileCount();
+        Soundfile *getSoundfile(int index);
+        void SetVolume( float vol);
+        void SetVolumeIn( float vol);
+        void SetLoop( int loop );
+        long Seek(long position);
+#endif
+
 };
 
 #endif
