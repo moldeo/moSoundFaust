@@ -241,7 +241,7 @@ void moEffectSoundFaustFactory::Destroy(moEffect* fx) {
 
 bool moEffectSoundFaust::m_bAlutInit = false;
 
-moSoundFaustAudio::moSoundFaustAudio(DspFaust* p_pDspFaust=NULL) {
+moSoundFaustAudio::moSoundFaustAudio(DspFaust* p_pDspFaust) {
 	m_pData = NULL;
     m_BufferId = -1;
     m_SourceId = -1;
