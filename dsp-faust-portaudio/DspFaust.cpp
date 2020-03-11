@@ -3087,6 +3087,7 @@ class DecoratorUI : public UI
 #define SAMPLE_RATE 44100
 #define MAX_CHAN 64
 #define MAX_SOUNDFILE_PARTS 256
+#define MAX_SOUNDFILES 64
 
 #ifdef _MSC_VER
 #define PRE_PACKED_STRUCTURE __pragma(pack(push, 1))
@@ -3119,6 +3120,8 @@ struct Soundfile {
     int* fSR;       // sample rate of each part
     int* fOffset;   // offset of each part in the global buffer
     int fChannels;  // max number of channels of all concatenated files
+    void* fHandle;
+    int* fOffsetRead;
 
     Soundfile()
     {
@@ -3127,6 +3130,10 @@ struct Soundfile {
         fLength   = new int[MAX_SOUNDFILE_PARTS];
         fSR       = new int[MAX_SOUNDFILE_PARTS];
         fOffset   = new int[MAX_SOUNDFILE_PARTS];
+        fOffsetRead   = new int[MAX_SOUNDFILE_PARTS];
+        fHandle   = NULL;
+        fLength[0] = 0;
+        fLength[1] = 0;
     }
 
     ~Soundfile()
@@ -3295,9 +3302,11 @@ class SoundfileReader {
                     chan = 1;
                 } else {
                     getParamsFile(path_name_list[i], chan, length);
+                    cout << "createSoundfile > getParamsFile of " << path_name_list[i] << " has " << chan << " channels and " << length << " frames " << endl;
                 }
                 cur_chan = std::max<int>(cur_chan, chan);
                 total_length += length;
+                cout << "createSoundfile > Cur Channels " << cur_chan << " Total Length " << total_length << endl;
             }
 
             // Complete with empty parts
@@ -3315,6 +3324,14 @@ class SoundfileReader {
                     emptyFile(soundfile, i, offset);
                 } else {
                     readFile(soundfile, path_name_list[i], i, offset, max_chan);
+                    #ifdef MOLDEO_SOUND_FAUST_PLUGIN
+                    //TODO: check this code with Grame
+                    if (int(path_name_list.size())==1 && cur_chan>1) {
+                      for(int c=1; c < cur_chan; c++ ) {
+                        readFile(soundfile, path_name_list[i], c, offset, max_chan);
+                      }
+                    }
+                    #endif
                 }
             }
 
@@ -3324,6 +3341,7 @@ class SoundfileReader {
             }
 
             // Share the same buffers for all other channels so that we have max_chan channels available
+            cout << "createSoundfile > copy buffers from channel #" << cur_chan << " to #" << (max_chan-1) << endl;
             for (int chan = cur_chan; chan < max_chan; chan++) {
                 soundfile->fBuffers[chan] = soundfile->fBuffers[chan % cur_chan];
             }
@@ -3762,9 +3780,20 @@ struct LibsndfileReader : public SoundfileReader {
 
     void readFile(Soundfile* soundfile, const std::string& path_name, int part, int& offset, int max_chan)
     {
+        cout << "LibsndfileReader::readFile: " << path_name << endl;
         SF_INFO	snd_info;
         snd_info.format = 0;
-        SNDFILE* snd_file = sf_open(path_name.c_str(), SFM_READ, &snd_info);
+        SNDFILE* snd_file = (SNDFILE*) soundfile->fHandle;
+
+        if (snd_file==NULL) {
+          snd_file = sf_open(path_name.c_str(), SFM_READ, &snd_info);
+          soundfile->fHandle = (void*)snd_file;
+          //soundfile->fName = path_name;
+        } else {
+          snd_info.frames = int(soundfile->fLength[part]);
+          snd_info.channels = soundfile->fChannels;
+          snd_info.samplerate = soundfile->fSR[part];
+        }
         readFileAux(soundfile, snd_file, snd_info, part, offset, max_chan);
     }
 
@@ -3774,6 +3803,7 @@ struct LibsndfileReader : public SoundfileReader {
         snd_info.format = 0;
         VFLibsndfile vio(buffer, length);
         SNDFILE* snd_file = sf_open_virtual(&vio.fVIO, SFM_READ, &snd_info, &vio);
+        soundfile->fHandle = (void*)snd_file;
         readFileAux(soundfile, snd_file, snd_info, part, offset, max_chan);
     }
 
@@ -3781,6 +3811,7 @@ struct LibsndfileReader : public SoundfileReader {
     void readFileAux(Soundfile* soundfile, SNDFILE* snd_file, const SF_INFO& snd_info, int part, int& offset, int max_chan)
     {
         assert(snd_file);
+        cout << "LibsndfileReader::readFileAux > part: " << part << " frames:" << snd_info.frames << " frate:" <<  snd_info.samplerate << " channels: " << snd_info.channels << endl;
         int channels = std::min<int>(max_chan, snd_info.channels);
     #ifdef SAMPLERATE
         if (isResampling(snd_info.samplerate)) {
@@ -3795,6 +3826,7 @@ struct LibsndfileReader : public SoundfileReader {
         soundfile->fSR[part] = snd_info.samplerate;
     #endif
         soundfile->fOffset[part] = offset;
+        soundfile->fOffsetRead[part] = 0;
 
         // Read and fill snd_info.channels number of channels
         sf_count_t nbf;
@@ -3857,7 +3889,7 @@ struct LibsndfileReader : public SoundfileReader {
             offset += nbf;
         #endif
         } while (nbf == BUFFER_SIZE);
-
+          cout << "part: " << part << " offset: " << offset << " nbf: " << nbf << endl;
         sf_close(snd_file);
     #ifdef SAMPLERATE
         if (resampler) src_delete(resampler);
@@ -3910,26 +3942,30 @@ class SoundUI : public GenericUI
         }
 
         // -- soundfiles
-        virtual void addSoundfile(const char* label, const char* url, Soundfile** sf_zone)
+        // break dsp-faust-portaudio/DspFaust.cpp:3936
+        virtual void addSoundfile( const char* label, const char* url, Soundfile** sf_zone)
         {
             const char* saved_url = url; // 'url' is consumed by parseMenuList2
             std::vector<std::string> file_name_list;
+            cout << "SoundUI::addSoundfile > " << label << " url:" << url << endl;
 
             bool menu = parseMenuList2(url, file_name_list, true);
             // If not a list, we have as single file
             if (!menu) { file_name_list.push_back(saved_url); }
-
+            cout << "file_name_list: " << file_name_list.size() << " : " << file_name_list[0] << endl;
             // Parse the possible list
             if (fSoundfileMap.find(saved_url) == fSoundfileMap.end()) {
                 // Check all files and get their complete path
                 std::vector<std::string> path_name_list = fSoundReader->checkFiles(fSoundfileDir, file_name_list);
+                cout << "path_name_list: " << path_name_list.size() << " : " << path_name_list[0] << endl;
                 // Read them and create the Soundfile
                 Soundfile* sound_file = fSoundReader->createSoundfile(path_name_list, MAX_CHAN);
                 if (sound_file) {
                     fSoundfileMap[saved_url] = sound_file;
+                    std::cout << "SoundUI::addSoundfile > soundfile added OK : " << saved_url << std::endl;
                 } else {
                     // If failure, use 'defaultsound'
-                    std::cerr << "addSoundfile : soundfile for " << saved_url << " cannot be created !" << std::endl;
+                    std::cerr << "SoundUI::addSoundfile >>>> soundfile for " << saved_url << " cannot be created !" << std::endl;
                     *sf_zone = defaultsound;
                     return;
                 }
@@ -4023,7 +4059,7 @@ static float mydsp_faustpower2_f(float value) {
 
 class mydsp : public dsp {
 
- private:
+public:
 
 	FAUSTFLOAT fHslider0;
 	FAUSTFLOAT fHslider1;
@@ -4677,7 +4713,18 @@ class mydsp : public dsp {
 	float fRec95[2];
 	FAUSTFLOAT fVbargraph14;
 
+  #ifdef MOLDEO_SOUND_FAUST_PLUGIN
+    Soundfile** m_sf_zone; //
+    int m_sf_count = 0; // Sound files number
+    int m_sf_index = -1; // Playing file index
+    float m_out_volume = 1.0; // Output volume
+    float m_in_volume = 1.0; // Input volume
+    int m_file_loop = 0;
+  #endif
+
+
  public:
+
 
 	void metadata(Meta* m) {
 		m->declare("analyzers.lib/name", "Faust Analyzer Library");
@@ -5602,6 +5649,9 @@ class mydsp : public dsp {
 	}
 
 	virtual void init(int sample_rate) {
+    //MAX_SOUNDFILE_PARTS
+    m_sf_zone = new Soundfile* [MAX_SOUNDFILES];
+    m_sf_index = -1;
 		classInit(sample_rate);
 		instanceInit(sample_rate);
 	}
@@ -5700,16 +5750,63 @@ class mydsp : public dsp {
 		ui_interface->closeBox();
 	}
 
+  //compute spectralLevel.dsp
+  #define CHLEFT 0
+  #define CHRIGHT 1
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
-		FAUSTFLOAT* input0 = inputs[0];
-		FAUSTFLOAT* output0 = outputs[0];
+
+    FAUSTFLOAT* input0 = inputs[0];//MICRO
+
+    FAUSTFLOAT* sf_inputs[MAX_SOUNDFILE_PARTS]; // FILE CHANNELS
+    int sf_inputs_max_off[MAX_SOUNDFILE_PARTS]; // FILE MAX OFFSETS
+
+    FAUSTFLOAT* output0 = outputs[CHLEFT]; // OUTPUT LEFT
+    FAUSTFLOAT* output1 = outputs[CHRIGHT]; //OUTPUT RIGHT
+
+    #ifdef MOLDEO_SOUND_FAUST_PLUGIN
+
+      if (m_sf_index>=0) {// FILE INDEX
+        Soundfile* soundf = m_sf_zone[m_sf_index]; // FILE BUFFERS
+
+        //AT LEAST ONE CHANNEL
+        if (soundf) {
+          for( int channel=0; channel < soundf->fChannels; channel++ ) {
+
+            int f_actual_offset = soundf->fOffsetRead[channel];
+            int f_length = soundf->fLength[channel];
+
+            //we will read count frames of file and add it to the INPUT (MONO)
+            FAUSTFLOAT* sf_input;
+            sf_input = &(soundf->fBuffers[ channel ][ f_actual_offset ]);
+
+            for( int ii = 0; ii < count; ii++ ) {
+              if ( (f_actual_offset+ii) < f_length ) {
+                sf_inputs_max_off[channel] = ii;
+                input0[ii] = input0[ii] + sf_input[ii];
+              }
+            }
+
+            //forward count frames
+            soundf->fOffsetRead[channel] += count;
+
+            //file is stereo? ok use it in output
+            sf_inputs[channel] = sf_input;
+          }
+        }
+      }
+    #endif
+
 		float fSlow0 = float(fHslider0);
 		float fSlow1 = (0.00100000005f * float(fHslider1));
 		int iSlow2 = (std::fabs(fSlow1) < 1.1920929e-07f);
 		float fSlow3 = (iSlow2 ? 0.0f : std::exp((0.0f - (fConst1 / (iSlow2 ? 1.0f : fSlow1)))));
 		float fSlow4 = (1.0f - fSlow3);
 		for (int i = 0; (i < count); i = (i + 1)) {
-			float fTemp0 = float(input0[i]);
+      #ifdef MOLDEO_SOUND_FAUST_PLUGIN
+			float fTemp0 = m_in_volume*float(input0[i]);
+      #else
+      float fTemp0 = float(input0[i]);
+      #endif
 			fRec3[0] = (fTemp0 - (fConst11 * ((fConst14 * fRec3[2]) + (fConst16 * fRec3[1]))));
 			fRec2[0] = ((fConst11 * (((fConst13 * fRec3[0]) + (fConst17 * fRec3[1])) + (fConst13 * fRec3[2]))) - (fConst8 * ((fConst18 * fRec2[2]) + (fConst19 * fRec2[1]))));
 			fRec1[0] = ((fConst8 * (((fConst10 * fRec2[0]) + (fConst20 * fRec2[1])) + (fConst10 * fRec2[2]))) - (fConst4 * ((fConst21 * fRec1[2]) + (fConst22 * fRec1[1]))));
@@ -5837,7 +5934,12 @@ class mydsp : public dsp {
 			fRec96[0] = ((fConst520 * (((fConst521 * fRec97[0]) + (fConst530 * fRec97[1])) + (fConst521 * fRec97[2]))) - (fConst518 * ((fConst531 * fRec96[2]) + (fConst532 * fRec96[1]))));
 			fRec95[0] = ((fSlow3 * fRec95[1]) + (fSlow4 * std::fabs((fConst518 * (((fConst519 * fRec96[0]) + (fConst533 * fRec96[1])) + (fConst519 * fRec96[2]))))));
 			fVbargraph14 = FAUSTFLOAT((fSlow0 + (20.0f * std::log10(std::max<float>(1.00000001e-07f, fRec95[0])))));
-			output0[i] = FAUSTFLOAT(fTemp0);
+      #ifdef MOLDEO_SOUND_FAUST_PLUGIN
+      if (sf_inputs[CHLEFT] && i<=sf_inputs_max_off[CHLEFT] ) output0[i] = m_out_volume*FAUSTFLOAT( sf_inputs[CHLEFT][i] );
+      if (sf_inputs[CHRIGHT] && i<=sf_inputs_max_off[CHRIGHT]) output1[i] = m_out_volume*FAUSTFLOAT( sf_inputs[CHRIGHT][i] );
+      #else
+      output0[i] = FAUSTFLOAT(fTemp0);
+      #endif
 			fRec3[2] = fRec3[1];
 			fRec3[1] = fRec3[0];
 			fRec2[2] = fRec2[1];
@@ -12159,7 +12261,7 @@ using namespace std;
 
 class FaustPolyEngine {
 
-    protected:
+    public:
 
         mydsp_poly* fPolyDSP;     // the polyphonic Faust object
         dsp* fFinalDSP;           // the "final" dsp object submitted to the audio driver
@@ -17296,7 +17398,7 @@ class portaudio : public audio {
             const PaDeviceInfo*	idev = Pa_GetDeviceInfo(Pa_GetDefaultInputDevice());
             const PaDeviceInfo*	odev = Pa_GetDeviceInfo(Pa_GetDefaultOutputDevice());
 
-            printf("DEVICE = %p || %p\n", idev, odev);
+            printf("DEVICE = %p %s %i || %p %s %i\n", idev, idev->name, idev->maxInputChannels, odev, odev->name, odev->maxOutputChannels );
 
             //In case there is no audio device, the function fails
 
@@ -25081,6 +25183,89 @@ int DspFaust::getScreenColor()
 {
 	return fPolyEngine->getScreenColor();
 }
+
+
+#ifdef MOLDEO_SOUND_FAUST_PLUGIN
+int
+DspFaust::addSoundfile( const char* label, const char* filename, int force_index ) {
+  int return_index = -1;
+  mydsp* myDsp = (mydsp*)(fPolyEngine->fFinalDSP);
+  if (fSoundInterface) {
+      //TODO: change SoundUI Interface with error results!!
+      int _save_index = myDsp->m_sf_count;
+      if (force_index>=0) _save_index = force_index;
+      return_index = _save_index;
+      Soundfile** _fzone = &(myDsp->m_sf_zone[ _save_index ]);
+
+      fSoundInterface->addSoundfile( label, filename, _fzone );
+      myDsp->m_sf_count++;
+    }
+    return return_index;
+}
+
+Soundfile **
+DspFaust::getSoundfiles() {
+  mydsp* myDsp = (mydsp*)(fPolyEngine->fFinalDSP);
+  return  myDsp->m_sf_zone;
+  //return NULL;
+}
+
+int
+DspFaust::getSoundfileCount() {
+  mydsp* myDsp = (mydsp*)(fPolyEngine->fFinalDSP);
+  return myDsp->m_sf_count;
+}
+
+Soundfile *
+DspFaust::getSoundfile(int index) {
+  mydsp* myDsp = (mydsp*)(fPolyEngine->fFinalDSP);
+  if (index<0 || index>=myDsp->m_sf_count) return NULL;
+  Soundfile* p_sf = myDsp->m_sf_zone[index];
+  return p_sf;
+}
+
+int DspFaust::GetPlayingSFIndex() {
+  mydsp* myDsp = (mydsp*)(fPolyEngine->fFinalDSP);
+  return myDsp->m_sf_index;
+}
+
+bool DspFaust::SetPlayingSFIndex(int index) {
+  mydsp* myDsp = (mydsp*)(fPolyEngine->fFinalDSP);
+  if (index<0 || index>=myDsp->m_sf_count) return false;
+  myDsp->m_sf_index = index;
+  return true;
+}
+
+void DspFaust::SetVolume( float vol) {
+  mydsp* myDsp = (mydsp*)(fPolyEngine->fFinalDSP);
+  myDsp->m_out_volume = vol;
+}
+
+void DspFaust::SetVolumeIn( float vol) {
+  mydsp* myDsp = (mydsp*)(fPolyEngine->fFinalDSP);
+  myDsp->m_in_volume = vol;
+}
+
+void DspFaust::SetLoop( int loop ) {
+  mydsp* myDsp = (mydsp*)(fPolyEngine->fFinalDSP);
+  myDsp->m_file_loop = loop;
+}
+
+long DspFaust::Seek(long position) {
+  mydsp* myDsp = (mydsp*)(fPolyEngine->fFinalDSP);
+  Soundfile* psf = myDsp->m_sf_zone[myDsp->m_sf_index ];
+  if (position<0 || position>=psf->fLength[0]) return -1;
+  for( int chan = 0 ; chan < psf->fChannels; chan++) {
+    if (position<0 || position>=psf->fLength[chan]) continue;
+    long off_position = (position / BUFFER_SIZE );
+    off_position =  BUFFER_SIZE * off_position;
+    psf->fOffsetRead[ chan ] = off_position;
+  }
+  return position;
+}
+
+#endif
+
 
 #ifdef BUILD
 #include <unistd.h>

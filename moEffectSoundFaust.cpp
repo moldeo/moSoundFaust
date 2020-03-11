@@ -52,7 +52,7 @@ string inouts[7] = {
   "vbar"
 };
 
-class moUISoundFaust : public UI {
+class moUISoundFaust : public UI, public moAbstract {
 
 public:
 
@@ -60,7 +60,9 @@ public:
   bool _save_new_config;
   int param_index_counter = 0;
 
-  moUISoundFaust() {}
+  moUISoundFaust() {
+
+  }
 
   moUISoundFaust(moEffectSoundFaust *p_object ) {
       //so good
@@ -91,31 +93,51 @@ public:
   void addButton(const char* label, FAUSTFLOAT* zone) {
     moParamDefinition pdef( label, "NUMERIC" );
     int pidx = m_object->GetConfig()->GetParamIndex(label);
-    if (pidx<0) { m_object->GetConfig()->CreateParam( pdef ); _save_new_config = true; }
+    if (pidx<0) {
+      m_object->MODebug2->Message("Creating Moldeo Config Param: Button (Faust) NUMERIC (Moldeo [0:1]) : " + moText(label));
+      m_object->GetConfig()->CreateParam( pdef );
+      _save_new_config = true;
+    }
   }
   void addCheckButton(const char* label, FAUSTFLOAT* zone) {
     moParamDefinition pdef( label, "NUMERIC" );
     int pidx = m_object->GetConfig()->GetParamIndex(label);
-    if (pidx<0) { m_object->GetConfig()->CreateParam( pdef ); _save_new_config = true; }
+    if (pidx<0) {
+      m_object->MODebug2->Message("Creating Moldeo Config Param: Check Button (Faust) NUMERIC (Moldeo [0:1]) : " + moText(label));
+      m_object->GetConfig()->CreateParam( pdef );
+      _save_new_config = true;
+    }
   }
   void addVerticalSlider(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT step) {
     moParamDefinition pdef( label, "FUNCTION" );
     int pidx = m_object->GetConfig()->GetParamIndex(label);
-    if (pidx<0) { m_object->GetConfig()->CreateParam( pdef ); _save_new_config = true; }
+    if (pidx<0) {
+      m_object->MODebug2->Message("Creating Moldeo Config Param: Vertical Slider (Faust) FUNCTION (Moldeo) : " + moText(label));
+      m_object->GetConfig()->CreateParam( pdef );
+      _save_new_config = true;
+    }
   }
   void addHorizontalSlider(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT step) {
     moParamDefinition pdef( label, "FUNCTION" );
     int pidx = m_object->GetConfig()->GetParamIndex(label);
-    if (pidx<0) { m_object->GetConfig()->CreateParam( pdef ); _save_new_config = true; }
+    if (pidx<0) {
+      m_object->MODebug2->Message("Creating Moldeo Config Param: Horizontal Slider (Faust) FUNCTION (Moldeo) : " + moText(label));
+      m_object->GetConfig()->CreateParam( pdef );
+      _save_new_config = true;
+    }
   }
   void addNumEntry(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT step) {
     moParamDefinition pdef( label, "NUMERIC" );
     int pidx = m_object->GetConfig()->GetParamIndex(label);
-    if (pidx<0) { m_object->GetConfig()->CreateParam( pdef ); _save_new_config = true; }
+    if (pidx<0) {
+      m_object->MODebug2->Message("Creating Moldeo Config Param: NumEntry (Faust) NUMERIC (Moldeo) : " + moText(label));
+      m_object->GetConfig()->CreateParam( pdef );
+      _save_new_config = true;
+    }
     for(auto& it : ( (moEffectSoundFaust*) m_object)->myDecoder->fUiItems ) {
       if (it.label==label) {
           it.index = param_index_counter++;
-          m_object->MODebug2->Message("feliz coincidencia:"+moText(label));
+          m_object->MODebug2->Message("NumEntry UiItem found: " + moText(label));
       }
     }
   }
@@ -176,7 +198,7 @@ public:
   // -- soundfiles
 
   void addSoundfile(const char* label, const char* filename, Soundfile** sf_zone) {
-
+    DMessage("moUISoundFaust::addSoundFile > label: "+moText(label)+" filename: "+moText(filename));
   }
 
   // -- metadata declarations
@@ -219,28 +241,29 @@ void moEffectSoundFaustFactory::Destroy(moEffect* fx) {
 
 bool moEffectSoundFaust::m_bAlutInit = false;
 
-moSoundFaustAL::moSoundFaustAL() {
+moSoundFaustAudio::moSoundFaustAudio() {
 	m_pData = NULL;
     m_BufferId = -1;
     m_SourceId = -1;
+    m_pDspFaust = NULL;
 }
 
-moSoundFaustAL::~moSoundFaustAL() {
+moSoundFaustAudio::~moSoundFaustAudio() {
 	Finish();
 }
 
-MOboolean moSoundFaustAL::Finish() {
+MOboolean moSoundFaustAudio::Finish() {
 	// Clean up by deleting Source(s) and Buffer(s)
-
+/*
 	alSourceStop(m_SourceId);
 	alSourcei(m_SourceId, AL_BUFFER, 0);
     alDeleteSources(1, &m_SourceId);
-	alDeleteBuffers(1, &m_BufferId);
+	alDeleteBuffers(1, &m_BufferId);*/
 	return true;
 }
 
 
-MOboolean moSoundFaustAL::Init() {
+MOboolean moSoundFaustAudio::Init() {
 	m_BufferSize = 0;
 	m_ActualSample = 0;
 	m_OldSample = 0;
@@ -249,27 +272,27 @@ MOboolean moSoundFaustAL::Init() {
 
 
 MOboolean
-moSoundFaustAL::BuildEmpty( MOuint p_size ) {
+moSoundFaustAudio::BuildEmpty( MOuint p_size ) {
 
 	// Generate an AL Buffer
-
+/*
 	alGenBuffers( 1, &m_BufferId );
     moEffectSoundFaust::al_check_error( moText("BuildEmpty Buffer for  "+GetName()) );
-
+*/
 
   p_size = 0;
 	return true;
 }
 
 MOboolean
-moSoundFaustAL::BuildFromBuffer( MOuint p_size, GLvoid* p_buffer ) {
+moSoundFaustAudio::BuildFromBuffer( MOuint p_size, GLvoid* p_buffer ) {
 	//BuildEmpty(p_size);
 	p_buffer = NULL;
 	return true;
 }
 
 MOboolean
-moSoundFaustAL::BuildFromFile( const moText& p_filename ) {
+moSoundFaustAudio::BuildFromFile( const moText& p_filename ) {
 
 	BuildEmpty(0);
 
@@ -292,89 +315,94 @@ moSoundFaustAL::BuildFromFile( const moText& p_filename ) {
 
   ALenum error;
 #ifdef MO_FREEALUT
-    #ifndef MO_MACOSX
-    //m_BufferId = alutCreateBufferFromFile( p_filename  );
+    #ifdef MO_WIN32
+      //m_BufferId = alutCreateBufferFromFile( p_filename  );
 
-    m_pData = (void*)alutLoadMemoryFromFile( p_filename, &m_eBufferFormat, &m_ulDataSize, &m_fFrequency );
-    if (m_pData) {
-      alBufferData( m_BufferId, m_eBufferFormat, m_pData, m_ulDataSize, (int)m_fFrequency );
-        DMessage( " frames (m_ulDataSize): " + IntToStr(m_ulDataSize) );
-        DMessage( " samplerate (m_fFrequency): " + IntToStr( (int)m_fFrequency) );
-        //DMessage( " channels: " + IntToStr(wsndinfo.channels) );
-        DMessage( " format: " + IntToStr( m_eBufferFormat ) );
-        switch(m_eBufferFormat) {
-          case AL_FORMAT_MONO8:
-            DMessage( " AL_FORMAT_MONO8" );
-            break;
-          case AL_FORMAT_MONO16:
-            DMessage( " AL_FORMAT_MONO16" );
-            break;
-          case AL_FORMAT_STEREO8:
-            DMessage( " AL_FORMAT_STEREO8" );
-            break;
-          case AL_FORMAT_STEREO16:
-            DMessage( " AL_FORMAT_STEREO16" );
-            break;
-          default:
-            break;
-        }
-        //DMessage( " sections: " + IntToStr(wsndinfo.sections) );
-        //DMessage( " seekable: " + IntToStr(wsndinfo.seekable) );
-    }
-    if ((error = alutGetError()) != ALUT_ERROR_NO_ERROR)
-    {
-        MODebug2->Error( "moSoundFaustAL::BuildFromFile > alutCreateBufferFromFile failed: " + IntToStr( error ) );
-        // Delete Buffers
-        //alDeleteBuffers(NUM_BUFFERS, buffers);
-        return false;
-    }
+      m_pData = (void*)alutLoadMemoryFromFile( p_filename, &m_eBufferFormat, &m_ulDataSize, &m_fFrequency );
+      if (m_pData) {
+        alBufferData( m_BufferId, m_eBufferFormat, m_pData, m_ulDataSize, (int)m_fFrequency );
+          DMessage( " frames (m_ulDataSize): " + IntToStr(m_ulDataSize) );
+          DMessage( " samplerate (m_fFrequency): " + IntToStr( (int)m_fFrequency) );
+          //DMessage( " channels: " + IntToStr(wsndinfo.channels) );
+          DMessage( " format: " + IntToStr( m_eBufferFormat ) );
+          switch(m_eBufferFormat) {
+            case AL_FORMAT_MONO8:
+              DMessage( " AL_FORMAT_MONO8" );
+              break;
+            case AL_FORMAT_MONO16:
+              DMessage( " AL_FORMAT_MONO16" );
+              break;
+            case AL_FORMAT_STEREO8:
+              DMessage( " AL_FORMAT_STEREO8" );
+              break;
+            case AL_FORMAT_STEREO16:
+              DMessage( " AL_FORMAT_STEREO16" );
+              break;
+            default:
+              break;
+          }
+          //DMessage( " sections: " + IntToStr(wsndinfo.sections) );
+          //DMessage( " seekable: " + IntToStr(wsndinfo.seekable) );
+      }
+      if ((error = alutGetError()) != ALUT_ERROR_NO_ERROR)
+      {
+          MODebug2->Error( "moSoundFaustAudio::BuildFromFile > alutCreateBufferFromFile failed: " + IntToStr( error ) );
+          // Delete Buffers
+          //alDeleteBuffers(NUM_BUFFERS, buffers);
+          return false;
+      }
     #else
-    SF_INFO wsndinfo;
-    SNDFILE* wsndfile = sf_open( p_filename, SFM_READ, &wsndinfo );
-    if (wsndfile) {
-        DMessage( " frames: " + IntToStr(wsndinfo.frames) );
-        DMessage( " samplerate: " + IntToStr(wsndinfo.samplerate) );
-        DMessage( " channels: " + IntToStr(wsndinfo.channels) );
-        DMessage( " format: " + IntToStr(wsndinfo.format) );
-        DMessage( " sections: " + IntToStr(wsndinfo.sections) );
-        DMessage( " seekable: " + IntToStr(wsndinfo.seekable) );
-        if (wsndinfo.samplerate)
-            DMessage( " seconds: " + FloatToStr( (float)wsndinfo.frames/(float)wsndinfo.samplerate) );
-        long num_items = wsndinfo.frames * wsndinfo.channels;
-        long numread = 0;
-        short* sdata = new short [num_items*2];
-        int i=0;
-        DMessage( " num_items: " + IntToStr(num_items) );
-        if ( sdata ) {
-            int readcount;
-            numread = sf_read_short( wsndfile, sdata, num_items );
-            short min = 65535;
-            short max = 0;
-            for(; i<num_items; ++i) {
-                if (sdata[i]>max) max = sdata[i];
-                if (sdata[i]<min) min = sdata[i];
-            }
-            DMessage( " numread: " + IntToStr(numread) + " min:" + IntToStr(min)+ " max:" + IntToStr(max) );
-            if (numread==num_items) {
-                DMessage( " Loaded OK! " );
-                //alBufferData( helloBuffer, AL_FORMAT_MONO16, samples, buf_size, sample_rate);
-                alBufferData( m_BufferId, AL_FORMAT_STEREO16, sdata, num_items*2, wsndinfo.samplerate );
-                moEffectSoundFaust::al_check_error("alBufferData");
+      SF_INFO wsndinfo;
+      SNDFILE* wsndfile = sf_open( p_filename, SFM_READ, &wsndinfo );
+      if (wsndfile) {
+          DMessage( " frames: " + IntToStr(wsndinfo.frames) );
+          DMessage( " samplerate: " + IntToStr(wsndinfo.samplerate) );
+          DMessage( " channels: " + IntToStr(wsndinfo.channels) );
+          DMessage( " format: " + IntToStr(wsndinfo.format) );
+          DMessage( " sections: " + IntToStr(wsndinfo.sections) );
+          DMessage( " seekable: " + IntToStr(wsndinfo.seekable) );
+          if (wsndinfo.samplerate) {
+              float secondsf = ( (float) wsndinfo.frames / (float) wsndinfo.samplerate ) ;
+              int mins = (int) floor( secondsf / 60.0 );
+              int secs = (int) floor( secondsf ) - mins*60;
+              DMessage( "DURATION: " + IntToStr(mins,3) + ":" + IntToStr( secs )+"s");
+          }
+          long num_items = wsndinfo.frames * wsndinfo.channels;
+          long numread = 0;
+          short* sdata = new short [num_items*2];
+          int i=0;
+          DMessage( " num_items: " + IntToStr(num_items) );
+          if ( sdata ) {
+              int readcount;
+              numread = sf_read_short( wsndfile, sdata, num_items );
+              short min = 65535;
+              short max = 0;
+              for(; i<num_items; ++i) {
+                  if (sdata[i]>max) max = sdata[i];
+                  if (sdata[i]<min) min = sdata[i];
+              }
+              DMessage( " numread: " + IntToStr(numread) + " min:" + IntToStr(min)+ " max:" + IntToStr(max) );
+              if (numread==num_items) {
+                  DMessage( " Loaded OK! " );
 
-            }
-        }
-        if (sdata) delete [] sdata;
-    } else {
-        DError( moText(sf_strerror(wsndfile)));
-    }
+                  //alBufferData( helloBuffer, AL_FORMAT_MONO16, samples, buf_size, sample_rate);
+                  /*alBufferData( m_BufferId, AL_FORMAT_STEREO16, sdata, num_items*2, wsndinfo.samplerate );
+                  moEffectSoundFaust::al_check_error("alBufferData");*/
+
+              }
+          }
+          if (sdata) delete [] sdata;
+      } else {
+          DError( moText(sf_strerror(wsndfile)));
+      }
     #endif
 #else
   m_BufferId = 0;
 #endif
 
 
-  MODebug2->Message("moSoundFaustAL::BuildFromFile > Loaded Buffer from file: " + p_filename );
-
+  MODebug2->Message("moSoundFaustAudio::BuildFromFile > Loaded Buffer from file: " + p_filename );
+/*
   alGetBufferi( m_BufferId, AL_SIZE, &m_BufferSize );
   moEffectSoundFaust::al_check_error("alGetBufferi AL_SIZE");
   ALint bcount,channels, frequency;
@@ -387,18 +415,19 @@ moSoundFaustAL::BuildFromFile( const moText& p_filename ) {
   alGetBufferi(m_BufferId, AL_FREQUENCY, &frequency);
   m_AudioFormat.m_SampleRate = frequency;
 
-  MODebug2->Message("moSoundFaustAL::BuildFromFile > Audioformat.m_BufferSize: " + IntToStr(m_BufferSize)
+  MODebug2->Message("moSoundFaustAudio::BuildFromFile > Audioformat.m_BufferSize: " + IntToStr(m_BufferSize)
                     + " Audioformat.m_BitCount:" + IntToStr(m_AudioFormat.m_BitCount)
                     + " Audioformat.m_Channels:" + IntToStr(m_AudioFormat.m_Channels)
-                    + " Audioformat.m_SampleRate:" + IntToStr(m_AudioFormat.m_SampleRate) );
+                    + " Audioformat.m_SampleRate:" + IntToStr(m_AudioFormat.m_SampleRate) );*/
 
     // Generate a Source to playback the Buffer
+    /*
     alGenSources( 1, &m_SourceId );
     moEffectSoundFaust::al_check_error("Generating source");
     alSourcei( m_SourceId, AL_BUFFER, m_BufferId );
     moEffectSoundFaust::al_check_error("Attaching buffer to source");
-    MODebug2->Message("moSoundFaustAL::BuildFromFile > buffersize: " + IntToStr(m_BufferSize) + " bufferid:" + IntToStr(m_BufferId) + " Attached to source:" + IntToStr(m_SourceId) );
-/*
+    MODebug2->Message("moSoundFaustAudio::BuildFromFile > buffersize: " + IntToStr(m_BufferSize) + " bufferid:" + IntToStr(m_BufferId) + " Attached to source:" + IntToStr(m_SourceId) );
+
     alSourcePlay( m_SourceId );
     //alSourceStop( m_SourceId );
     moEffectSoundFaust::al_check_error("Playing source");
@@ -453,77 +482,82 @@ moSoundFaustAL::BuildFromFile( const moText& p_filename ) {
 
 }
 
-void moSoundFaustAL::Play() {
+void moSoundFaustAudio::Play() {
 	// Start playing source
 
-	alSourcePlay(m_SourceId);
+	/*alSourcePlay(m_SourceId);*/
+  if (m_pDspFaust)
+    m_pDspFaust->start();
 
 }
 
 
-void moSoundFaustAL::PlaySample( MOint sampleid ) {
+void moSoundFaustAudio::PlaySample( MOint sampleid ) {
 
     Update();//update actual state and sample
 
 	//(m_SourceId);
+
 	if (m_ActualSample!=sampleid && sampleid!=0 && (State() != MO_STREAMSTATE_PLAYING)  ) {
-		alSourcei(m_SourceId, AL_BYTE_OFFSET, sampleid);
-		alSourcePlay(m_SourceId);
+		/*alSourcei(m_SourceId, AL_BYTE_OFFSET, sampleid);
+		alSourcePlay(m_SourceId);*/
 		m_ActualSample = sampleid;
 	}
 
-	ALenum error = alGetError();
+	/*ALenum error = alGetError();
 	if (error!=AL_NO_ERROR) {
-    MODebug2->Error("moSoundFaustAL::PlaySample > playing sample id: " + IntToStr(sampleid) + " error:" + IntToStr(error) );
-	}
+    MODebug2->Error("moSoundFaustAudio::PlaySample > playing sample id: " + IntToStr(sampleid) + " error:" + IntToStr(error) );
+	}*/
 
 }
 
-void moSoundFaustAL::Update() {
+void moSoundFaustAudio::Update() {
 
     State();
     m_OldSample = m_ActualSample;
-    alGetSourcei( m_SourceId , AL_BYTE_OFFSET , &m_ActualSample);
+    /*alGetSourcei( m_SourceId , AL_BYTE_OFFSET , &m_ActualSample);*/
 
 }
 
-void moSoundFaustAL::Pause() {
+void moSoundFaustAudio::Pause() {
 
-	alSourcePause(m_SourceId);
+	/*alSourcePause(m_SourceId);*/
 
 }
 
-void moSoundFaustAL::Stop() {
+void moSoundFaustAudio::Stop() {
 	// Stop the Source and clear the Queue
 
-	alSourceStop(m_SourceId);
+	/*alSourceStop(m_SourceId);*/
+  if (m_pDspFaust) {
+    m_pDspFaust->stop();
+    m_pDspFaust->Seek(0);
+  }
+}
 
+void moSoundFaustAudio::Rewind() {
+
+	/*alSourceRewind(m_SourceId);*/
 
 }
 
-void moSoundFaustAL::Rewind() {
 
-	alSourceRewind(m_SourceId);
-
-}
-
-
-void moSoundFaustAL::Final() {
+void moSoundFaustAudio::Final() {
 
 	Update();
 }
 
-void moSoundFaustAL::Frame(int frame) {
+void moSoundFaustAudio::Frame(int frame) {
 	Update();
 }
 
-void moSoundFaustAL::Repeat(int repeat) {
-    alSourcei(m_SourceId, AL_LOOPING, repeat==1 );
+void moSoundFaustAudio::Repeat(int repeat) {
+    /*alSourcei(m_SourceId, AL_LOOPING, repeat==1 );*/
 }
 
-moStreamState moSoundFaustAL::State() {
+moStreamState moSoundFaustAudio::State() {
 	// Get Source State
-	alGetSourcei( m_SourceId, AL_SOURCE_STATE, &m_iAlState);
+	/*alGetSourcei( m_SourceId, AL_SOURCE_STATE, &m_iAlState);
 	switch(m_iAlState) {
       case AL_INITIAL:
         return MO_STREAMSTATE_READY;
@@ -540,108 +574,153 @@ moStreamState moSoundFaustAL::State() {
       case AL_STOPPED:
         return MO_STREAMSTATE_STOPPED;
         break;
-	}
-
+	}*/
+  if (m_pDspFaust) {
+    return ( m_pDspFaust->isRunning()==true ) ? MO_STREAMSTATE_PLAYING : MO_STREAMSTATE_STOPPED;
+  }
   return MO_STREAMSTATE_UNKNOWN;
 }
 
 
 bool
-moSoundFaustAL::IsPlaying() {
+moSoundFaustAudio::IsPlaying() {
   return (State()== MO_STREAMSTATE_PLAYING);
 }
 
+MOulong moSoundFaustAudio::GetDuration() {
+  MOulong duration = 0;
+  if (m_pSoundfile)
+    duration = m_pSoundfile->fLength[0];
+  return duration;
+}
 
-void moSoundFaustAL::SetPosition( float x, float y, float z ) {
+MOulong moSoundFaustAudio::GetPosition() {
+  MOulong position = 0;
+  if (m_pSoundfile)
+    position = m_pSoundfile->fOffsetRead[0];
+  return position;
+}
 
-	alSource3f( m_SourceId, AL_POSITION, x, y, z );
+
+void moSoundFaustAudio::SetPosition( float x, float y, float z ) {
+
+	/*alSource3f( m_SourceId, AL_POSITION, x, y, z );
   float listenerPos[ 3 ] = { 0.0, 0.0, 0.0 };
   float listenerOri[ 6 ] = { 0.0, 0.0, -1.0,  0.0, 1.0, 0.0 };
   float listenerVel[ 3 ] = { 0.0, 0.0, 0.0  };
   alListenerfv( AL_POSITION, listenerPos );
   alListenerfv( AL_VELOCITY, listenerVel );
-  alListenerfv( AL_ORIENTATION, listenerOri );
+  alListenerfv( AL_ORIENTATION, listenerOri );*/
+
+
+
+
   //alSourcei( m_SourceId, AL_SOURCE_RELATIVE, true );
   //alSourcef( m_SourceId, AL_DOPPLER_FACTOR, 2.0 );
   //alSourcef( m_SourceId, AL_DOPPLER_VELOCITY, 1.0 );
 }
 
-void moSoundFaustAL::SetVelocity( float x, float y, float z ) {
+void moSoundFaustAudio::SetVelocity( float x, float y, float z ) {
 
-	alSource3f( m_SourceId, AL_VELOCITY, x, y, z );
-
-}
-
-void moSoundFaustAL::SetDirection( float x, float y, float z ) {
-
-	alSource3f( m_SourceId, AL_DIRECTION, x, y, z );
+	/*alSource3f( m_SourceId, AL_VELOCITY, x, y, z );*/
 
 }
 
-void moSoundFaustAL::SetVolume( float volume ) {
+void moSoundFaustAudio::SetDirection( float x, float y, float z ) {
 
-	alSourcef( m_SourceId, AL_GAIN, volume );
+	/*alSource3f( m_SourceId, AL_DIRECTION, x, y, z );*/
 
 }
 
-float moSoundFaustAL::GetVolume() {
+void moSoundFaustAudio::SetVolume( float volume ) {
 
-	alGetSourcef( m_SourceId, AL_GAIN, &m_Volume );
+	/*alSourcef( m_SourceId, AL_GAIN, volume );*/
+  if (m_pDspFaust) {
+    m_pDspFaust->SetVolume(volume);
+  }
+
+}
+
+void moSoundFaustAudio::SetVolumeIn( float volume ) {
+
+	/*alSourcef( m_SourceId, AL_GAIN, volume );*/
+  if (m_pDspFaust) {
+    m_pDspFaust->SetVolumeIn(volume);
+  }
+
+}
+
+void moSoundFaustAudio::Seek( long position ) {
+
+	/*alSourcef( m_SourceId, AL_GAIN, volume );*/
+  if (m_pDspFaust) {
+    m_pDspFaust->Seek(position);
+  }
+
+}
+
+float moSoundFaustAudio::GetVolume() {
+
+	/*alGetSourcef( m_SourceId, AL_GAIN, &m_Volume );*/
 
 	return m_Volume;
 
 }
 
-float moSoundFaustAL::GetActualSampleVolume() {
+float moSoundFaustAudio::GetActualSampleVolume() {
   float avolume = 0;
   if (m_pData) {
     //MODebug2->Message("actualsample:"+IntToStr( m_ActualSample )+"/"+IntToStr(m_ulDataSize) );
-    if (m_ActualSample < m_ulDataSize  ) {
+    //if (m_ActualSample < m_ulDataSize  ) {
       /*int indexp = m_ActualSample / (2/m_AudioFormat.m_Channels);
       //avolume = (float) ((WORD*)m_pData)[ indexp ];
       avolume = 32000;
       avolume = (1.0f*fabs(avolume)) / (65535.0/2.0);
       */
-    }
+    //}
+    avolume = 1;
 
   }
   return avolume;
 }
 
-void moSoundFaustAL::SetPitch( float pitch )  {
+void moSoundFaustAudio::SetPitch( float pitch )  {
     m_Pitch = pitch;
 
-    alSourcef(m_SourceId, AL_PITCH, pitch);
+    /*alSourcef(m_SourceId, AL_PITCH, pitch);*/
 
 }
 
 
-float moSoundFaustAL::GetPitch()  {
+float moSoundFaustAudio::GetPitch()  {
 
-  alGetSourcef( m_SourceId, AL_PITCH, &m_Pitch );
+  /*alGetSourcef( m_SourceId, AL_PITCH, &m_Pitch );*/
 
   return m_Pitch;
 }
 
-void moSoundFaustAL::SetLoop( bool loop ) {
+void moSoundFaustAudio::SetLoop( bool loop ) {
 
   //alSource3f();
-  alSourcei( m_SourceId, AL_LOOPING, loop);
+  /*alSourcei( m_SourceId, AL_LOOPING, loop);*/
 }
 
 
 void
-moSoundFaustAL::SetSpeedOfSound( float speedofsound ) {
+moSoundFaustAudio::SetSpeedOfSound( float speedofsound ) {
   //alSourcei( m_SourceId, AL_SPEED_OF_SOUND, speedofsound );
-  alSpeedOfSound( speedofsound );
+  /*alSpeedOfSound( speedofsound );*/
 }
 
 
 
-void moSoundFaustAL::SetBalance( float balance ) {
+void moSoundFaustAudio::SetBalance( float balance ) {
     //DMessage("SetBalance for "+GetName()+" balance:" + FloatToStr(balance) );
     //alSourcef( m_SourceId, AL_BALANCE, balance );
-    float listenerPos[ 3 ] = { 0.0, 0.0, 0.0 };
+
+
+
+    /*float listenerPos[ 3 ] = { 0.0, 0.0, 0.0 };
     float listenerOri[ 6 ] = { 0.0, 0.0, -1.0,  0.0, 1.0, 0.0 };
     float listenerVel[ 3 ] = { 0.0, 0.0, 0.0  };
     alListenerfv( AL_POSITION, listenerPos );
@@ -649,10 +728,30 @@ void moSoundFaustAL::SetBalance( float balance ) {
     alListenerfv( AL_ORIENTATION, listenerOri );
 
     float sourcePos[ 3 ] = { balance*10.0, 0.0, 0.0 };
-    alSourcefv(m_SourceId, AL_POSITION, sourcePos);
+    alSourcefv(m_SourceId, AL_POSITION, sourcePos);*/
 
     m_Balance = balance;
 }
+
+void moSoundFaustAudio::SetBalanceMonoStereo( float balance ) {
+    //DMessage("SetBalance for "+GetName()+" balance:" + FloatToStr(balance) );
+    //alSourcef( m_SourceId, AL_BALANCE, balance );
+
+
+
+    /*float listenerPos[ 3 ] = { 0.0, 0.0, 0.0 };
+    float listenerOri[ 6 ] = { 0.0, 0.0, -1.0,  0.0, 1.0, 0.0 };
+    float listenerVel[ 3 ] = { 0.0, 0.0, 0.0  };
+    alListenerfv( AL_POSITION, listenerPos );
+    alListenerfv( AL_VELOCITY, listenerVel );
+    alListenerfv( AL_ORIENTATION, listenerOri );
+
+    float sourcePos[ 3 ] = { balance*10.0, 0.0, 0.0 };
+    alSourcefv(m_SourceId, AL_POSITION, sourcePos);*/
+
+    m_BalanceMonoStereo = balance;
+}
+
 
 
 //========================
@@ -675,33 +774,33 @@ moEffectSoundFaust::~moEffectSoundFaust() {
 
 int moEffectSoundFaust::al_check_error(const char * p_message) { // generic OpenAL error checker
 
-    ALenum al_error;
+    /*ALenum al_error;
     al_error = alGetError();
 
     if(AL_NO_ERROR != al_error) {
 
         printf("OPENAL ERROR - %s  (%s)\n", alGetString(al_error), p_message);
         return al_error;
-    }
+    }*/
     return 0;
 }
 
 int moEffectSoundFaust::alutCheckError(const char * p_message) { // generic OpenAL error checker
 
-    ALenum alut_error;
+    /*ALenum alut_error;
     alut_error = alutGetError();
 
     if( ALUT_ERROR_NO_ERROR != alut_error) {
 
         printf("ALUT ERROR - %s  (%s)\n", alutGetErrorString(alut_error), p_message);
         return alut_error;
-    }
+    }*/
     return 0;
 }
 
 void moEffectSoundFaust::ShowBufferInfo( ALint p_BufferId ) {
 
-    ALint bcount,channels, frequency, bsize;
+    /*ALint bcount,channels, frequency, bsize;
     alGetBufferi(p_BufferId, AL_SIZE, &bsize);
     al_check_error("failed call to alGetBufferi AL_SIZE");
     alGetBufferi(p_BufferId, AL_BITS, &bcount);
@@ -709,101 +808,56 @@ void moEffectSoundFaust::ShowBufferInfo( ALint p_BufferId ) {
     alGetBufferi(p_BufferId, AL_CHANNELS, &channels);
     al_check_error("failed call to alGetBufferi AL_CHANNELS");
     alGetBufferi(p_BufferId, AL_FREQUENCY, &frequency);
-    al_check_error("failed call to alGetBufferi AL_FREQUENCY");
-
+    al_check_error("failed call to alGetBufferi AL_FREQUENCY");*/
+/*
     DMessage("ShowBufferInfo > size: " + IntToStr(bsize)
             + " bitcount:" + IntToStr(bcount)
             + " channels:" + IntToStr(channels)
-            + " frequency:" + IntToStr(frequency) );
+            + " frequency:" + IntToStr(frequency) );*/
 
 }
 
 MOboolean moEffectSoundFaust::Init() {
 
 #ifdef MO_MACOSX
-    m_pALCDevice = alcOpenDevice( alcGetString(NULL, ALC_DEVICE_SPECIFIER) );
+    /*m_pALCDevice = alcOpenDevice( alcGetString(NULL, ALC_DEVICE_SPECIFIER) );
     if (!m_pALCDevice) {
         DError("Init > alcOpenDevice no device created!");
         return false;
     } else {
         DMessage( moText("Init > alcOpenDevice device:") + IntToStr((long)m_pALCDevice) );
-    }
+    }*/
 #endif
 
-    /*
-    ALboolean enumeration;
-
-    enumeration = alcIsExtensionPresent(NULL, "ALC_ENUMERATION_EXT");
-    if (enumeration == AL_FALSE) {
-        // enumeration not supported
-        DError("Init > enumeration not supported.");
-    } else {
-        // enumeration supported
-        DMessage("Init > enumerating devices:");
-        const ALCchar *ldevices;
-        ldevices = alcGetString(NULL, ALC_DEVICE_SPECIFIER);
-        const ALCchar *ldevice = ldevices, *next = ldevices + 1;
-        size_t len = 0;
-        while (device && *ldevice != '\0' && next && *next != '\0') {
-            DMessage( moText("device:") + moText((char*)ldevice) );
-            len = strlen(ldevice);
-            ldevice += (len + 1);
-            next += (len + 2);
-        }
-
-    }
-    */
-
 #ifdef MO_MACOSX
-    m_pALCContext = alcCreateContext(m_pALCDevice, NULL);
+    /*m_pALCContext = alcCreateContext(m_pALCDevice, NULL);
     if (!alcMakeContextCurrent(m_pALCContext)) {
         DError("Init > alcMakeContextCurrent Error!");
         return false;
     } else {
         DMessage( moText("Init > context:") + IntToStr((long)m_pALCContext) );
-    }
+    }*/
 #endif
 
 #ifdef MO_FREEALUT
 
-   //if ( alutInitWithoutContext( NULL, NULL )) {
-
-   if (m_bAlutInit==false) {
+   /*if (m_bAlutInit==false) {
       m_bAlutInit = alutInit( NULL, NULL );
-   }
-
+   }*/
+/*
     if ( m_bAlutInit ) {
 
       DMessage("Init > ALUT Initialized!");
 
-      //alDistanceModel( AL_INVERSE_DISTANCE );
-      //alDistanceModel( AL_INVERSE_DISTANCE );
-      //MM_render_one_buffer();
-      //generate al id
-      //generate al buffer
-      //MM_render_one_buffer();
-  #ifndef MO_MACOSX
-  /*
-      helloBuffer = alutCreateBufferHelloWorld ();
-      alutCheckError( "alutCreateBufferHelloWorld" );
-      DMessage( "helloBuffer:"+ IntToStr(helloBuffer) );
 
-      //al_check_error("failed call to alutCreateBufferHelloWorld");
-      //associate buffer to al id source
-      if (helloBuffer) {
-        ShowBufferInfo(helloBuffer);
-        alGenSources (1, &helloSource);
-        al_check_error("failed call to alGenSources");
-        alSourcei (helloSource, AL_BUFFER, helloBuffer);
-        alSourcePlay(helloSource);
-      }
-    */
+  #ifndef MO_MACOSX
+///
   #endif
 
   } else {
       DError("Init > ALUT not initialized. Check if ALUT is installed correctly.");
       //return false;
-  }
+  }*/
 #endif
 
 
@@ -830,7 +884,15 @@ MOboolean moEffectSoundFaust::Init() {
   moDefineParamIndex( SOUNDFAUST_SPEEDOFSOUND, moText("speedofsound") );
   moDefineParamIndex( SOUNDFAUST_PITCH, moText("pitch") );
   moDefineParamIndex( SOUNDFAUST_VOLUME, moText("volume") );
+  moDefineParamIndex( SOUNDFAUST_VOLUME_IN, moText("volume_in") );
   moDefineParamIndex( SOUNDFAUST_BALANCE, moText("balance") );
+  moDefineParamIndex( SOUNDFAUST_BALANCE_MONO_STEREO, moText("balance_mono_stereo") );
+
+  moDefineParamIndex( SOUNDFAUST_SHOWAUDIODATA, moText("show_audio_data") );
+  moDefineParamIndex( SOUNDFAUST_DISPLAY_X, moText("display_x") );
+  moDefineParamIndex( SOUNDFAUST_DISPLAY_Y, moText("display_y") );
+  moDefineParamIndex( SOUNDFAUST_DISPLAY_WIDTH, moText("display_width") );
+  moDefineParamIndex( SOUNDFAUST_DISPLAY_HEIGHT, moText("display_height") );
 
   moDefineParamIndex( SOUNDFAUST_TEXTURE, moText("texture") );
   moDefineParamIndex( SOUNDFAUST_BLENDING, moText("blending") );
@@ -866,8 +928,14 @@ MOboolean moEffectSoundFaust::Init() {
       DMessage("Init > Static Dsp Faust Created");
   #endif
     if (m_pDspFaust) {
+
+      //check here if we have files, load them!
+      //fSoundInterface
+
+      DMessage("DspFaust Driver start");
       m_pDspFaust->start();
       m_pDspParamsCount = m_pDspFaust->getParamsCount();
+      DMessage("DspFaust getParamsCount :" + IntToStr(m_pDspParamsCount));
       m_cuijson = m_pDspFaust->getJSONUI();
       DMessage( moText(m_cuijson.c_str()) );
       DMessage(moText(m_pDspFaust->getJSONMeta()));
@@ -880,69 +948,23 @@ MOboolean moEffectSoundFaust::Init() {
         myDecoder->buildUserInterface(pUI);
 
       bool _save_new_config = pUI->_save_new_config;
-      /*
-      for (int p = 0; p < m_pDspParamsCount; p++) {
-          //std::string msg = UIJSON.get<std::string>("items.complex.path");
-          moText ttype = m_pDspFaust->getMetadata(p, "tooltip")+moText("ID")+IntToStr(p);
-          moText inout = ttype;
-          moText plabel = m_pDspFaust->getMetadata(p, "label");
-          APIUI::ItemType t;
-          inout  = moText("in ")+inout;
-          moText p_type = "NUMERIC";
-          moText o_type = "NUMERIC";
-          if (ttype=="button") { t = APIUI::ItemType::kButton; p_type = "NUMERIC"; }
-          if (ttype=="checkbutton") { t = APIUI::ItemType::kButton; p_type = "NUMERIC"; }
-          if (ttype=="vslider") { t = APIUI::ItemType::kVSlider; p_type = "FUNCTION"; }
-          if (ttype=="hslider") { t = APIUI::ItemType::kHSlider; p_type = "FUNCTION"; }
-          if (ttype=="numentry") { t = APIUI::ItemType::kNumEntry; p_type = "NUMERIC"; }
+      if (_save_new_config) {
+        DMessage("Saving new parameters to Moldeo SoundFaust config file");
+        m_Config.SaveConfig();
+      }
 
-          if (ttype=="hbargraph") t = APIUI::ItemType::kHBargraph;
-          if (ttype=="vbargraph") t = APIUI::ItemType::kVBargraph;
-          //{ kButton = 0, kCheckButton, kVSlider, kHSlider, kNumEntry, kHBargraph, kVBargraph };
-          switch(t) {
-            case APIUI::ItemType::kButton:
-            case APIUI::ItemType::kCheckButton:
-            case APIUI::ItemType::kVSlider:
-            case APIUI::ItemType::kHSlider:
-            case APIUI::ItemType::kNumEntry:
-              {
-                //input values, make parameters
-                moParamDefinition pdef( plabel, p_type );
-                int pidx = m_Config.GetParamIndex(plabel);
-                if (pidx<0) { m_Config.CreateParam( pdef ); _save_new_config = true; }
-              }
-              break;
-
-            case APIUI::ItemType::kHBargraph:
-            case APIUI::ItemType::kVBargraph:
-              {
-                //make outlets of them
-                int pidx = GetOutletIndex(plabel);
-                if (pidx<0) {
-                  moOutlet* pout = new moOutlet();
-                  pout->SetMoldeoLabelName( GetLabelName() );
-                  pout->Init( plabel, GetOutlets()->Count(), o_type);
-                  //pout->Init( plabel, i, m_Config.GetParam(plabel).GetPtr());
-                  GetOutlets()->Add( pout );
-                  _save_new_config = true;
-                }
-              }
-              break;
-
-            default:
-            //nothing
-              break;
+      ///UPDATE ALL SOUNDS FILES IN DSPFAUST
+      for(int i=0;i<m_pSM->GetSoundCount(); i++) {
+        moSoundFaustAudio* m_pAudio = (moSoundFaustAudio*)m_pSM->GetSound(i);
+        if (m_pAudio && m_pDspFaust) {
+          int ret_index = m_pDspFaust->addSoundfile( m_pAudio->GetName(), m_pAudio->GetName() );
+          if (ret_index>=0) {
+            m_pAudio->m_SoundfileIndex = ret_index;
+            m_pAudio->m_pSoundfile = m_pDspFaust->getSoundfile(m_pAudio->m_SoundfileIndex);
           }
-          DMessage(
-                    "Type: " + inout +
-                    "Label: " + plabel +
-                    "Address: " + moText(m_pDspFaust->getParamAddress(p)) +
-                    "Value: "   + FloatToStr(float(m_pDspFaust->getParamValue(p))) +
-                    "Min: " + FloatToStr(float(m_pDspFaust->getParamMin(p))) +
-                    "Max: " + FloatToStr(float(m_pDspFaust->getParamMax(p)))
-                  );
-      }*/
-      if (_save_new_config) m_Config.SaveConfig();
+        }
+      }
+
     }
   } catch(...) {
     DError("DspFaust failed");
@@ -960,7 +982,7 @@ MOboolean moEffectSoundFaust::Init() {
 MOboolean moEffectSoundFaust::Finish()
 {
   #ifdef MO_MACOSX
-
+/*
     if (m_pALCContext) {
         alcDestroyContext(m_pALCContext);
         m_pALCContext = NULL;
@@ -969,11 +991,11 @@ MOboolean moEffectSoundFaust::Finish()
     if (m_pALCDevice) {
         alcCloseDevice(m_pALCDevice);
         m_pALCDevice = NULL;
-    }
+    }*/
   #endif
 
 #ifdef MO_FREEALUT
-    alutExit ();
+/*    alutExit ();*/
 #endif
     return PreFinish();
 }
@@ -981,7 +1003,7 @@ MOboolean moEffectSoundFaust::Finish()
 
 void moEffectSoundFaust::MM_render_one_buffer() {
 
-
+/*
     alGenBuffers( 1, &helloBuffer );
     al_check_error("failed call to alGenBuffers");
 
@@ -1051,7 +1073,7 @@ void moEffectSoundFaust::MM_render_one_buffer() {
     }
 
     printf("end of playing\n");
-
+*/
 
 }
 
@@ -1109,7 +1131,8 @@ moEffectSoundFaust::UpdateParameters() {
       float value = m_pDspFaust->getParamValue( zp );
       float min = m_pDspFaust->getParamMin( zp );
       float max = m_pDspFaust->getParamMax( zp );
-      float norVal = (value - min) / ( max - min);
+      //float norVal = (value - min) / ( max - min);
+      float norVal = (value > 0 ) ? value : 0.0;
       moOutlet *pout = m_Outports.Get(zp);
       if (pout) {
         //DMessage(moText("Updating outlet: ") + pout->GetConnectorLabelName());
@@ -1117,7 +1140,7 @@ moEffectSoundFaust::UpdateParameters() {
           moConnection* pc = pout->GetConnections()->Get(k);
           //DMessage(moText("to: ") + pc->GetDestinationMoldeoLabelName() + ">" + pc->GetDestinationConnectorLabelName());
         }
-        pout->GetData()->SetDouble(value);
+        pout->GetData()->SetDouble(norVal);
         pout->Update(true);
       }
       zp++;
@@ -1161,6 +1184,7 @@ moEffectSoundFaust::UpdateParameters() {
   m_bLoop = m_Config.Int( moR( SOUNDFAUST_LOOP ) ) == 1;
   m_fPitch = m_Config.Eval( moR( SOUNDFAUST_PITCH ) );
   m_fVolume = m_Config.Eval( moR( SOUNDFAUST_VOLUME ) );
+  m_fVolumeIn = m_Config.Eval( moR( SOUNDFAUST_VOLUME_IN ) );
   m_fSpeedOfSound = m_Config.Eval( moR( SOUNDFAUST_SPEEDOFSOUND ) );
   //MODebug2->Message("Pitch:" + FloatToStr(m_fPitch) );
   m_vScale = moVector3f( m_Config.Eval(moR(SOUNDFAUST_SCALEX)),
@@ -1179,20 +1203,25 @@ moEffectSoundFaust::UpdateParameters() {
                             m_Config.Eval(moR(SOUNDFAUST_DIRECTIONY)),
                             m_Config.Eval(moR(SOUNDFAUST_DIRECTIONZ)) );
 
+  m_iPlayMode =  (moSoundFaustMode) m_Config.Int( moR( SOUNDFAUST_MODE ) );
+
   if (m_pAudio) {
     m_pAudio->SetLoop( m_bLoop );
     m_pAudio->SetPitch( m_fPitch );
     m_pAudio->SetVolume( m_fVolume );
+    m_pAudio->SetVolumeIn( m_fVolumeIn );
     m_pAudio->SetSpeedOfSound( m_fSpeedOfSound );
     m_pAudio->SetDirection( m_vDirection );
     m_pAudio->SetVelocity( m_vSpeed );
     m_pAudio->SetPosition( m_vPosition );
 
     m_pAudio->Update();
+
     m_fSampleVolume = 0.0;
     //m_fSampleVolume = m_pAudio->GetActualSampleVolume();
     //MODebug2->Message("m_fSampleVolume:"+FloatToStr( m_fSampleVolume )  );
     //MODebug2->Message("m_bLoop:"+IntToStr( m_bLoop )  );
+
 
   }
 
@@ -1208,34 +1237,55 @@ moEffectSoundFaust::UpdateSound( const moText& p_newfilename ) {
 
     moDataManager* pDataMan = m_pResourceManager->GetDataMan();
     moFile SoundFile;
-    moSoundFaustAL* prev_Audio  = NULL;
+    moSoundFaustAudio* prev_Audio  = NULL;
     if (m_SoundFaustFilename!=p_newfilename ) {
 
         m_SoundFaustFilename = p_newfilename;
         if (m_pAudio) {
           prev_Audio = m_pAudio;
         }
-        m_pAudio = (moSoundFaustAL*)m_pSM->GetSound( m_SoundFaustFilename, false );
+        m_pAudio = (moSoundFaustAudio*)m_pSM->GetSound( m_SoundFaustFilename, false );
 
         if (m_pAudio) {
+
+            ((moSoundFaustAudio*)m_pAudio)->SetDsp( m_pDspFaust );
+
             if (prev_Audio) {
               prev_Audio->Stop();
             }
+
+            if (m_pDspFaust) {
+              int sf_pid = m_Config.GetParamIndex("sound");
+              m_pDspFaust->SetPlayingSFIndex(m_Config.GetCurrentValueIndex( sf_pid ));
+              DMessage(" m_pDspFaust : changing sound file index [" + IntToStr(m_pDspFaust->GetPlayingSFIndex()) + moText("] ") + m_SoundFaustFilename );
+            }
+
         } else {
 
           SoundFile = pDataMan->GetDataFile( m_SoundFaustFilename );
           m_SoundFaustFilenameFull = SoundFile.GetCompletePath();
-          m_pAudio = new moSoundFaustAL();
+          m_pAudio = new moSoundFaustAudio(m_pDspFaust);
           if (m_pAudio) {
             m_pAudio->Init();
             //m_pAudio->Init( m_SoundFaustFilename, m_SoundFaustFilenameFull );
             m_pAudio->SetName( m_SoundFaustFilename );
             m_pAudio->SetFileName( m_SoundFaustFilenameFull );
 
-            MODebug2->Message("moEffectSoundFaust::UpdateSound > New audio building from file: " + m_pAudio->GetName() );
+            MODebug2->Message("moEffectSoundFaust::UpdateSound > New audio building from file: " + m_pAudio->GetFileName() );
+            if (m_pAudio->GetName()!="")
               if (m_pAudio->BuildFromFile( m_pAudio->GetFileName() ) ) {
                   DMessage("Adding sound to SoundManager!");
                     m_pSM->AddSound( (moSound*) m_pAudio );
+                      DMessage("m_pDspFaust:"+IntToStr((long)m_pDspFaust));
+                    if (m_pDspFaust) {
+                      DMessage("Adding sound to Dsp Sound Interface!");
+                      int sf_pid = m_Config.GetParamIndex("sound");
+                      m_pAudio->m_SoundfileIndex = m_Config.GetCurrentValueIndex( sf_pid );
+                      m_pDspFaust->SetPlayingSFIndex(m_pAudio->m_SoundfileIndex);
+                      m_pDspFaust->addSoundfile( m_pAudio->GetFileName(), m_pAudio->GetFileName(), m_pAudio->m_SoundfileIndex );
+                      m_pAudio->m_pSoundfile = m_pDspFaust->getSoundfile(m_pAudio->m_SoundfileIndex);
+                    }
+
               }
 
           }
@@ -1251,7 +1301,7 @@ moEffectSoundFaust::UpdateSound( const moText& p_newfilename ) {
       //Sound->Seek( (MOulong)mUserPosition, 1.0 );
       if (m_pAudio) {
         //TODO: seek position in frame al sound buffer
-        //m_pAudio->
+        m_pAudio->Seek(m_UserPosition);
       }
       m_UserPosition = mUserPosition;
     }
@@ -1267,6 +1317,13 @@ moEffectSoundFaust::UpdateSound( const moText& p_newfilename ) {
         }
     }
 
+/*
+if ( mLoop && m_Config.GetParam(moR(SOUND_SOUND)).GetIndexValue() == (m_Config.GetParam(moR(SOUND_SOUND)).GetValuesCount()-1) ) {
+    m_Config.GetParam(moR(SOUND_SOUND)).FirstValue();
+} else m_Config.GetParam(moR(SOUND_SOUND)).NextValue();
+
+*/
+  if (m_iPlayMode==MO_SOUND_MODE_SINGLE) {
     if (m_bLoop) {
         if (  ( moIsTimerStopped()
               || !m_EffectState.tempo.Started()
@@ -1302,6 +1359,11 @@ moEffectSoundFaust::UpdateSound( const moText& p_newfilename ) {
             }
         }
     }
+  } else if (m_iPlayMode==MO_SOUND_MODE_LONGPLAY) {
+
+
+  }
+
 }
 
 void moEffectSoundFaust::Draw( moTempo* tempogral, moEffectState* parentstate )
@@ -1522,7 +1584,8 @@ void moEffectSoundFaust::Draw( moTempo* tempogral, moEffectState* parentstate )
       float value = m_pDspFaust->getParamValue(a);
       float min = m_pDspFaust->getParamMin( a );
       float max = m_pDspFaust->getParamMax( a );
-      float norVal = (value - min) / ( max - min);
+      float norVal = (value > 0 ) ? value : 0.0; //(value - min) / ( max - min);
+      //DMessage("A: "+IntToStr(a)+" N:"+FloatToStr(value)+" Min:"+FloatToStr(min)+" Max:"+FloatToStr(max));
       m_LevelModels[a].MakeIdentity()
                 .Scale(   m_vScale.X(),  m_vScale.Y()*norVal,  m_vScale.Z() )
                 .Rotate(   360.0*progress*moMathf::DEG_TO_RAD, 0.0, 1.0, 0.0 )
@@ -1543,9 +1606,78 @@ void moEffectSoundFaust::Draw( moTempo* tempogral, moEffectState* parentstate )
 
     ///RENDERING
     pRMan->Render( &Scene, &Camera3D );
+
+
+    int show_audio_data = m_Config.Int( moR(SOUNDFAUST_SHOWAUDIODATA) );
+
+    m_DisplayX = m_Config.Eval( moR(SOUNDFAUST_DISPLAY_X) );
+    m_DisplayY = m_Config.Eval( moR(SOUNDFAUST_DISPLAY_Y) );
+    m_DisplayW = m_Config.Eval( moR(SOUNDFAUST_DISPLAY_WIDTH) );
+    m_DisplayH = m_Config.Eval( moR(SOUNDFAUST_DISPLAY_HEIGHT) );
+
+  	if (show_audio_data) {
+      DMessage("show_audio_data:"+IntToStr(show_audio_data));
+  		//DrawDisplayInfo( 0, 0 );
+  	}
 }
 
+void
+moEffectSoundFaust::DrawDisplayInfo( MOfloat x, MOfloat y ) {
 
+	moTextArray pInfo;
+/*
+    pInfo.Add( moText("TicksAux:") + IntToStr((int)m_TicksAux) );
+    pInfo.Add( moText("Ticks:") + IntToStr((int)m_Ticks) );
+    pInfo.Add( moText(" "));
+	pInfo.Add( moText("Mode:") + IntToStr((int)moviemode) );
+	pInfo.Add( moText("Loop:") + IntToStr((int)m_bLoop) );
+    pInfo.Add( moText("State:") + IntToStr((int)m_PlayState) );
+	pInfo.Add( moText("Speed:") + FloatToStr(m_PlaySpeed) );
+	pInfo.Add( moText(" "));
+	pInfo.Add( moText("Len:") + IntToStr(m_FramesLength) );
+	pInfo.Add( moText("Fps:") + FloatToStr(m_FramesPerSecond) );
+	pInfo.Add( moText(" "));
+
+	*/
+	moText streamstate = "";
+  if (m_pAudio) {
+    switch (m_pAudio->State()) {
+      case MO_STREAMSTATE_PAUSED:
+        streamstate = "paused";
+        break;
+      case MO_STREAMSTATE_PLAYING:
+        streamstate = "playing";
+        break;
+      case MO_STREAMSTATE_STOPPED:
+        streamstate = "stopped";
+        break;
+      case MO_STREAMSTATE_READY:
+        streamstate = "ready";
+        break;
+      case MO_STREAMSTATE_UNKNOWN:
+      default:
+        streamstate = "none";
+        break;
+    }
+  }
+moText pos_dur = moText("Position:") + IntToStr(m_pAudio->GetPosition())
++ moText(" / ")
++ IntToStr(m_pAudio->GetDuration());
+
+pInfo.Add( pos_dur );
+
+DMessage(pos_dur);
+	/*pInfo.Add( moText("Frame:") + IntToStr( m_FramePosition ) + moText("/") + IntToStr( m_FramesLength )
+           + moText(" FPS:") + FloatToStr( m_FramesPerSecond )
+           + moText(" State:") + streamstate);*/
+
+/*  pInfo.Add( moVideoManager::FramesToTimecode( (MOulonglong)m_FramePosition, m_FramesPerSecond )
+                    + moText("/")
+                    + moVideoManager::FramesToTimecode( (MOulonglong)m_FramesLength, m_FramesPerSecond ) );*/
+
+	m_pResourceManager->GetGuiMan()->DisplayInfoWindow( m_DisplayX , m_DisplayY, m_DisplayW, m_DisplayH, pInfo );
+
+}
 
 void moEffectSoundFaust::Interaction( moIODeviceManager *IODeviceManager ) {
 
@@ -1597,15 +1729,22 @@ moEffectSoundFaust::GetDefinition( moConfigDefinition *p_configdefinition ) {
   p_configdefinition->Add( moText("sound"), MO_PARAM_SOUND, SOUNDFAUST_SOUND, moValue( "default", "TXT") );
 
   p_configdefinition->Add( moText("seekposition"), MO_PARAM_FUNCTION, SOUNDFAUST_SEEKPOSITION, moValue( "0", MO_VALUE_FUNCTION ).Ref() );
-  p_configdefinition->Add( moText("mode"), MO_PARAM_NUMERIC, SOUNDFAUST_MODE, moValue( "0", MO_VALUE_NUM_INT ) );
+  p_configdefinition->Add( moText("mode"), MO_PARAM_NUMERIC, SOUNDFAUST_MODE, moValue( "0","NUM").Ref(), moText("SINGLE,LONGPLAY,SOUND,FILTER") );
 	p_configdefinition->Add( moText("loop"), MO_PARAM_FUNCTION, SOUNDFAUST_LOOP, moValue( "0.0", MO_VALUE_FUNCTION).Ref() );
 	p_configdefinition->Add( moText("launch"), MO_PARAM_FUNCTION, SOUNDFAUST_LAUNCH, moValue( "0.0", MO_VALUE_FUNCTION).Ref() );
 	p_configdefinition->Add( moText("speedofsound"), MO_PARAM_FUNCTION, SOUNDFAUST_SPEEDOFSOUND, moValue( "0.0", MO_VALUE_FUNCTION).Ref() );
 	p_configdefinition->Add( moText("pitch"), MO_PARAM_FUNCTION, SOUNDFAUST_PITCH, moValue( "1.0", MO_VALUE_FUNCTION).Ref() );
 
+  p_configdefinition->Add( moText("show_audio_data"), MO_PARAM_NUMERIC, SOUNDFAUST_SHOWAUDIODATA, moValue( "0","NUM").Ref() );
+	p_configdefinition->Add( moText("display_x"), MO_PARAM_FUNCTION, SOUNDFAUST_DISPLAY_X, moValue( "-0.5","FUNCTION").Ref()  );
+	p_configdefinition->Add( moText("display_y"), MO_PARAM_FUNCTION, SOUNDFAUST_DISPLAY_Y, moValue( "-0.35","FUNCTION").Ref()  );
+	p_configdefinition->Add( moText("display_width"), MO_PARAM_FUNCTION, SOUNDFAUST_DISPLAY_WIDTH, moValue( "1.0","FUNCTION").Ref()  );
+	p_configdefinition->Add( moText("display_height"), MO_PARAM_FUNCTION, SOUNDFAUST_DISPLAY_HEIGHT, moValue( "0.05","FUNCTION").Ref()  );
 	//p_configdefinition->Add( moText("sound"), MO_PARAM_TEXT, SOUND_SOUND, moValue( "default", "TXT") );
 	p_configdefinition->Add( moText("volume"), MO_PARAM_FUNCTION, SOUNDFAUST_VOLUME, moValue( "1.0", MO_VALUE_FUNCTION).Ref() );
+  p_configdefinition->Add( moText("volume_in"), MO_PARAM_FUNCTION, SOUNDFAUST_VOLUME_IN, moValue( "1.0", MO_VALUE_FUNCTION).Ref() );
 	p_configdefinition->Add( moText("balance"), MO_PARAM_TRANSLATEX, SOUNDFAUST_BALANCE, moValue( "0.0", MO_VALUE_FUNCTION).Ref() );
+  p_configdefinition->Add( moText("balance_mono_stereo"), MO_PARAM_TRANSLATEX, SOUNDFAUST_BALANCE_MONO_STEREO, moValue( "0.0", MO_VALUE_FUNCTION).Ref() );
 	p_configdefinition->Add( moText("texture"), MO_PARAM_TEXTURE, SOUNDFAUST_TEXTURE, moValue( "default", "TXT") );
 	p_configdefinition->Add( moText("blending"), MO_PARAM_BLENDING, SOUNDFAUST_BLENDING, moValue( "0", "NUM").Ref() );
 
