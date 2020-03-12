@@ -5770,7 +5770,7 @@ public:
 
     FAUSTFLOAT* output0 = outputs[CHLEFT]; // OUTPUT LEFT
     FAUSTFLOAT* output1 = outputs[CHRIGHT]; //OUTPUT RIGHT
-
+    cout << "copmuting" << end;
     #ifdef MOLDEO_SOUND_FAUST_PLUGIN
 
       if (m_sf_index>=0) {// FILE INDEX
