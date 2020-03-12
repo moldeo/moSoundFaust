@@ -21,5 +21,5 @@ lib_LTLIBRARIES = libmoldeo_soundfaust.la
 libmoldeo_soundfaust_la_SOURCES = moEffectSoundFaust.cpp moEffectSoundFaust.h dsp-faust-portaudio/DspFaust.h
 libmoldeo_soundfaust_la_CPPFLAGS = ${LIBMOLDEO_CFLAGS} ${FREEALUT_CFLAGS} ${SNDFILE_CFLAGS}
 libmoldeo_soundfaust_la_LDFLAGS =
-libmoldeo_soundfaust_la_LIBADD = ${FREEALUT_LIBS} ${SDL2MIXER_LIBS} ${SNDFILE_LIBS} -lfaust
-libmoldeo_soundfaust_la_LIBS = ${LIBMOLDEO_LIBS}
+libmoldeo_soundfaust_la_LIBADD = ${FREEALUT_LIBS} ${SDL2MIXER_LIBS} ${SNDFILE_LIBS} ${PORTAUDIO_LIBS} -lfaust
+libmoldeo_soundfaust_la_LIBS = ${LIBMOLDEO_LIBS} ${PORTAUDIO_LIBS}
