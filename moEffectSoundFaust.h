@@ -291,6 +291,8 @@ public:
 
   int outports_outlet_base_index;
 
+	moDataMessages   m_DataMessages;
+	moOutlet* m_pOutDataMessages;
 
 private:
 
