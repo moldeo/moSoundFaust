@@ -3972,7 +3972,9 @@ class SoundUI : public GenericUI
             }
 
             // Get the soundfile
+            std::cout << "SoundUI::addSoundfile > copying pointer to sf_zone " << saved_url << std::endl;
             *sf_zone = fSoundfileMap[saved_url];
+            std::cout << "SoundUI::addSoundfile > copying ok! " << saved_url << std::endl;
         }
 
         static std::string getBinaryPath(std::string folder = "")
