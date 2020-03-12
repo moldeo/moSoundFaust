@@ -4716,7 +4716,7 @@ public:
 	FAUSTFLOAT fVbargraph14;
 
   #ifdef MOLDEO_SOUND_FAUST_PLUGIN
-    Soundfile** m_sf_zone; //
+    Soundfile* m_sf_zone[MAX_SOUNDFILES]; //
     int m_sf_count = 0; // Sound files number
     int m_sf_index = -1; // Playing file index
     float m_out_volume = 1.0; // Output volume
@@ -5653,7 +5653,7 @@ public:
 	virtual void init(int sample_rate) {
     //MAX_SOUNDFILE_PARTS
     std::cout << "mydsp::init > Creating sf_zone: " <<  (MAX_SOUNDFILES) << endl;
-    m_sf_zone = new Soundfile* [MAX_SOUNDFILES];
+    /*m_sf_zone = new Soundfile* [MAX_SOUNDFILES];*/
     if (m_sf_zone) {
       std::cout << "mydsp::init > Creating sf_zone ok! " <<  (long)(m_sf_zone) << endl;
     } else {
