@@ -765,6 +765,7 @@ moEffectSoundFaust::moEffectSoundFaust() {
     m_pALCContext = NULL;
     m_pALCDevice = NULL;
     i_PlayedTimes = 0;
+    m_pOutDataMessages = NULL;
 
 }
 
@@ -869,6 +870,14 @@ MOboolean moEffectSoundFaust::Init() {
   }
 
   if (!PreInit()) return false;
+  moOutlet* pOutlet = NULL;
+  for( int i=0; i<m_Outlets.Count(); i++) {
+    pOutlet = m_Outlets.Get(i);
+    if (pOutlet->GetConnectorLabelName() == moText("DATAMESSAGES")) {
+      m_pOutDataMessages = pOutlet;
+      MODebug2->Message("moSoundFaust::Init > Added Outlet DATAMESSAGES");
+    }
+  }
 
   moDefineParamIndex( SOUNDFAUST_ALPHA, moText("alpha") );
   moDefineParamIndex( SOUNDFAUST_COLOR, moText("color") );
@@ -1126,6 +1135,9 @@ moEffectSoundFaust::ResolveValue( moParam& param, int value_index, bool p_refres
 void
 moEffectSoundFaust::UpdateParameters() {
 
+  m_DataMessages.Empty();
+
+
   for (int p = 0; p < 15; ++p) {
       //DMessage( moText("B")+IntToStr(p) + moText(":")+ FloatToStr(float(m_pDspFaust->getParamValue(p))) );
   }
@@ -1139,8 +1151,32 @@ moEffectSoundFaust::UpdateParameters() {
       float max = m_pDspFaust->getParamMax( zp );
       //float norVal = (value - min) / ( max - min);
       float norVal = (value > 0 ) ? value : 0.0;
+
       moOutlet *pout = m_Outports.Get(zp);
       if (pout) {
+
+        if (m_pOutDataMessages) {
+          moDataMessage m_DataMessage;
+          moData ouletfaust2moldeo;
+          //moData outletchannel;
+          moData outletdata;
+          moData outletlabel;
+          moData outletvalue;
+          ouletfaust2moldeo.SetText("MOLDEO");
+          outletdata.SetText("DATA");//take care to no have the process moldeo api on in your netoscin, beware
+          //outletchannel.SetInt();
+          outletlabel.SetText(pout->GetConnectorLabelName());
+          outletvalue.SetDouble( (double)norVal );
+          m_DataMessage.Empty();
+          // /moldeo/DATA search for outlets
+          m_DataMessage.Add(ouletfaust2moldeo);
+          m_DataMessage.Add(outletdata);
+          m_DataMessage.Add(outletlabel);
+          m_DataMessage.Add(outletvalue);
+
+          m_DataMessages.Add(m_DataMessage);
+        }
+
         //DMessage(moText("Updating outlet: ") + pout->GetConnectorLabelName());
         for(int k=0; k<pout->GetConnections()->Count();k++) {
           moConnection* pc = pout->GetConnections()->Get(k);
@@ -1153,6 +1189,16 @@ moEffectSoundFaust::UpdateParameters() {
       //DMessage("output zone param p: "+IntToStr(zp)+" zone: " + FloatToStr(zpf->fZone)+" index: "+IntToStr(zpf->fIndex)+ " value: "+FloatToStr(value) );
     }
 
+    if (m_pOutDataMessages) {
+      moDataMessages& msgs( m_pOutDataMessages->GetMessages() );
+      msgs.Empty();
+      msgs = m_DataMessages;
+      if ( m_pOutDataMessages->GetType()==MO_DATA_MESSAGES ) {
+        //if (m_debugison) MODebug2->Message("moMidi::Update > Updated Outlet DATAMESSAGES: Count:" + IntToStr(m_DataMessages.Count()) );
+        m_pOutDataMessages->GetData()->SetMessages( &msgs );
+        m_pOutDataMessages->Update();
+      }
+    }
 
     float input_level[2];
     input_level[0] = m_Config.Eval("Level Averaging Time");
