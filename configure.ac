@@ -69,11 +69,14 @@ if test "x$host_name" = "xosx" ; then
 	#use framework OpenAL
 	echo "Using -framework OpenAL (-framework CoreAudio))"
 	PKG_CHECK_MODULES([FREEALUT], [freealut] ,has_freealut=yes)
-
+	AC_SUBST([PORTAUDIO_LIBS],"")
+	AC_SUBST([PORTAUDIO_CFLAGS],"")
 else
 	dnl check for alut
 	PKG_CHECK_MODULES([FREEALUT], [freealut] ,has_freealut=yes)
-	PKG_CHECK_MODULES([PORTAUDIO], [portaudio] ,has_portaudio=yes)
+	#PKG_CHECK_MODULES([PORTAUDIO], [portaudio] ,has_portaudio=yes)
+	PKG_CHECK_MODULES([PORTAUDIO], [portaudiocpp] ,has_portaudio=yes)
+
 fi
 
 dnl autoscan results

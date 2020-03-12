@@ -874,6 +874,8 @@ MOboolean moEffectSoundFaust::Init() {
   moDefineParamIndex( SOUNDFAUST_COLOR, moText("color") );
   moDefineParamIndex( SOUNDFAUST_SYNC, moText("syncro") );
   moDefineParamIndex( SOUNDFAUST_PHASE, moText("phase") );
+  moDefineParamIndex( SOUNDFAUST_GUIDES, moText("guides") );
+
   moDefineParamIndex( SOUNDFAUST_SOUND, moText("sound") );
 
   moDefineParamIndex( SOUNDFAUST_SEEKPOSITION, moText("seekposition") );
@@ -896,6 +898,10 @@ MOboolean moEffectSoundFaust::Init() {
 
   moDefineParamIndex( SOUNDFAUST_TEXTURE, moText("texture") );
   moDefineParamIndex( SOUNDFAUST_BLENDING, moText("blending") );
+
+  moDefineParamIndex( SOUNDFAUST_SCALEX_VBARS, moText("scalex_vbars") );
+  moDefineParamIndex( SOUNDFAUST_SCALEY_VBARS, moText("scaley_vbars") );
+  moDefineParamIndex( SOUNDFAUST_SCALEZ_VBARS, moText("scalez_vbars") );
 
   moDefineParamIndex( SOUNDFAUST_SCALEX, moText("scalex") );
   moDefineParamIndex( SOUNDFAUST_SCALEY, moText("scaley") );
@@ -1181,12 +1187,19 @@ moEffectSoundFaust::UpdateParameters() {
 
   UpdateSound( m_Config.Text( moR(SOUNDFAUST_SOUND)) );
 
+  m_iGuides = m_Config.Int( moR( SOUNDFAUST_GUIDES ) );
   m_bLoop = m_Config.Int( moR( SOUNDFAUST_LOOP ) ) == 1;
   m_fPitch = m_Config.Eval( moR( SOUNDFAUST_PITCH ) );
   m_fVolume = m_Config.Eval( moR( SOUNDFAUST_VOLUME ) );
   m_fVolumeIn = m_Config.Eval( moR( SOUNDFAUST_VOLUME_IN ) );
   m_fSpeedOfSound = m_Config.Eval( moR( SOUNDFAUST_SPEEDOFSOUND ) );
   //MODebug2->Message("Pitch:" + FloatToStr(m_fPitch) );
+
+  m_vScaleVBars = moVector3f( m_Config.Eval(moR(SOUNDFAUST_SCALEX_VBARS)),
+                            m_Config.Eval(moR(SOUNDFAUST_SCALEY_VBARS)),
+                            m_Config.Eval(moR(SOUNDFAUST_SCALEZ_VBARS)) );
+
+
   m_vScale = moVector3f( m_Config.Eval(moR(SOUNDFAUST_SCALEX)),
                             m_Config.Eval(moR(SOUNDFAUST_SCALEY)),
                             m_Config.Eval(moR(SOUNDFAUST_SCALEZ)) );
@@ -1368,6 +1381,12 @@ if ( mLoop && m_Config.GetParam(moR(SOUND_SOUND)).GetIndexValue() == (m_Config.G
 
 void moEffectSoundFaust::Draw( moTempo* tempogral, moEffectState* parentstate )
 {
+
+    if (m_iGuides==0) {
+      //sound systems are minded to be only audio
+      return;
+    }
+
     MOint indeximage;
     MOdouble PosTextX0, PosTextX1, PosTextY0, PosTextY1;
     int ancho,alto;
@@ -1530,7 +1549,9 @@ void moEffectSoundFaust::Draw( moTempo* tempogral, moEffectState* parentstate )
     } else return ;
 
     glEnable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
+    glEnable(GL_ALPHA);
+    //glDisable(GL_BLEND);
+    SetBlending( (moBlendingModes) m_Config[moR(SOUNDFAUST_BLENDING)][MO_SELECTED][0].Int() );
 
     moObject3D Scene;
 
@@ -1562,6 +1583,7 @@ void moEffectSoundFaust::Draw( moTempo* tempogral, moEffectState* parentstate )
     float progress = 0.0;
     moGLMatrixf Model;
     Model.MakeIdentity()
+         .Scale(   m_vScale.X(), m_vScale.Y(),  m_vScale.Z() )
          .Rotate(   360.0*progress*moMathf::DEG_TO_RAD, 0.0, 1.0, 0.0 )
          .Translate(    m_vPosition.X(), m_vPosition.Y(), m_vPosition.Z() );
     moMesh Mesh( Sphere, Mat );
@@ -1587,9 +1609,9 @@ void moEffectSoundFaust::Draw( moTempo* tempogral, moEffectState* parentstate )
       float norVal = (value > 0 ) ? value : 0.0; //(value - min) / ( max - min);
       //DMessage("A: "+IntToStr(a)+" N:"+FloatToStr(value)+" Min:"+FloatToStr(min)+" Max:"+FloatToStr(max));
       m_LevelModels[a].MakeIdentity()
-                .Scale(   m_vScale.X(),  m_vScale.Y()*norVal,  m_vScale.Z() )
+                .Scale(   m_vScale.X()*m_vScaleVBars.X(), m_vScale.Y()*m_vScaleVBars.Y()*norVal,  m_vScale.Z()*m_vScaleVBars.Z() )
                 .Rotate(   360.0*progress*moMathf::DEG_TO_RAD, 0.0, 1.0, 0.0 )
-                .Translate(    m_vPosition.X()+(a-7)*0.2, m_vPosition.Y(), m_vPosition.Z() );
+                .Translate(    m_vPosition.X()+m_vScale.X()*(a-7)*0.2, m_vPosition.Y(), m_vPosition.Z() );
       m_LevelMeshes[a].SetModelMatrix(m_LevelModels[a]);
       //add to scene
       Scene.AddChild(&m_LevelMeshes[a]);
@@ -1748,6 +1770,9 @@ moEffectSoundFaust::GetDefinition( moConfigDefinition *p_configdefinition ) {
 	p_configdefinition->Add( moText("texture"), MO_PARAM_TEXTURE, SOUNDFAUST_TEXTURE, moValue( "default", "TXT") );
 	p_configdefinition->Add( moText("blending"), MO_PARAM_BLENDING, SOUNDFAUST_BLENDING, moValue( "0", "NUM").Ref() );
 
+  p_configdefinition->Add( moText("scalex_vbars"), MO_PARAM_SCALEX, SOUNDFAUST_SCALEX_VBARS, moValue( "1.0", "FUNCTION").Ref() );
+	p_configdefinition->Add( moText("scaley_vbars"), MO_PARAM_SCALEY, SOUNDFAUST_SCALEY_VBARS, moValue( "1.0", "FUNCTION").Ref() );
+	p_configdefinition->Add( moText("scalez_vbars"), MO_PARAM_SCALEZ, SOUNDFAUST_SCALEZ_VBARS, moValue( "1.0", "FUNCTION").Ref() );
 
   p_configdefinition->Add( moText("scalex"), MO_PARAM_SCALEX, SOUNDFAUST_SCALEX, moValue( "1.0", "FUNCTION").Ref() );
 	p_configdefinition->Add( moText("scaley"), MO_PARAM_SCALEY, SOUNDFAUST_SCALEY, moValue( "1.0", "FUNCTION").Ref() );

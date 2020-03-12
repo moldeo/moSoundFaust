@@ -81,6 +81,7 @@ enum moSoundFaustParamIndex {
 	SOUNDFAUST_COLOR,
 	SOUNDFAUST_SYNC,
 	SOUNDFAUST_PHASE,
+	SOUNDFAUST_GUIDES,
 	SOUNDFAUST_SOUND,
 	SOUNDFAUST_SEEKPOSITION,
 	SOUNDFAUST_MODE,
@@ -101,6 +102,10 @@ enum moSoundFaustParamIndex {
 
 	SOUNDFAUST_TEXTURE,
 	SOUNDFAUST_BLENDING,
+
+	SOUNDFAUST_SCALEX_VBARS,
+  SOUNDFAUST_SCALEY_VBARS,
+  SOUNDFAUST_SCALEZ_VBARS,
 
   SOUNDFAUST_SCALEX,
   SOUNDFAUST_SCALEY,
@@ -304,7 +309,7 @@ private:
   moText      m_SoundFaustFilenameFull;
 
   float m_fSampleVolume;
-
+	int			m_iGuides;
   bool    m_bAudioStarted;
   bool    m_bLaunch;
   float    m_fLaunch;
@@ -329,6 +334,9 @@ private:
   MOint Rx, Ry, Rz;
 
   moVector3f m_vScale;
+	moVector3f m_vScaleVBars;
+	moVector3f m_vScaleHBars;
+	moVector3f m_vScaleButtons;
   moVector3f m_vPosition;
   moVector3f m_vDirection;
   moVector3f m_vSpeed;
