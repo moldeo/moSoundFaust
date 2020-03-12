@@ -5652,7 +5652,13 @@ public:
 
 	virtual void init(int sample_rate) {
     //MAX_SOUNDFILE_PARTS
+    std::cout << "mydsp::init > Creating sf_zone: " <<  (MAX_SOUNDFILES) << endl;
     m_sf_zone = new Soundfile* [MAX_SOUNDFILES];
+    if (m_sf_zone) {
+      std::cout << "mydsp::init > Creating sf_zone ok! " <<  (long)(m_sf_zone) << endl;
+    } else {
+      std::cerr << "mydsp::init > Creating sf_zone error" << endl;
+    }
     m_sf_index = -1;
 		classInit(sample_rate);
 		instanceInit(sample_rate);
