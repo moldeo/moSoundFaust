@@ -5797,8 +5797,8 @@ public:
             }
 
             //forward count frames
-            cout << "forward:count: " << soundf->fOffsetRead[channel] << endl;
             soundf->fOffsetRead[channel] += count;
+            cout << "forward:count: " << soundf->fOffsetRead[channel] << endl;
 
             //file is stereo? ok use it in output
             //cout << "sf_input: " << sf_inputs[channel] << endl;
@@ -5813,7 +5813,7 @@ public:
 		int iSlow2 = (std::fabs(fSlow1) < 1.1920929e-07f);
 		float fSlow3 = (iSlow2 ? 0.0f : std::exp((0.0f - (fConst1 / (iSlow2 ? 1.0f : fSlow1)))));
 		float fSlow4 = (1.0f - fSlow3);
-    cout << "computing count: " << endl;
+    cout << "computing count: " << count << endl;
 		for (int i = 0; (i < count); i = (i + 1)) {
       #ifdef MOLDEO_SOUND_FAUST_PLUGIN
 			float fTemp0 = m_in_volume*float(input0[i]);
@@ -5948,8 +5948,9 @@ public:
 			fRec95[0] = ((fSlow3 * fRec95[1]) + (fSlow4 * std::fabs((fConst518 * (((fConst519 * fRec96[0]) + (fConst533 * fRec96[1])) + (fConst519 * fRec96[2]))))));
 			fVbargraph14 = FAUSTFLOAT((fSlow0 + (20.0f * std::log10(std::max<float>(1.00000001e-07f, fRec95[0])))));
       #ifdef MOLDEO_SOUND_FAUST_PLUGIN
-      if (sf_inputs[CHLEFT] && i<=sf_inputs_max_off[CHLEFT] ) output0[i] = m_out_volume*FAUSTFLOAT( sf_inputs[CHLEFT][i] );
-      if (sf_inputs[CHRIGHT] && i<=sf_inputs_max_off[CHRIGHT]) output1[i] = m_out_volume*FAUSTFLOAT( sf_inputs[CHRIGHT][i] );
+      //if (sf_inputs[CHLEFT] && i<=sf_inputs_max_off[CHLEFT] ) output0[i] = m_out_volume*FAUSTFLOAT( sf_inputs[CHLEFT][i] );
+      //if (sf_inputs[CHRIGHT] && i<=sf_inputs_max_off[CHRIGHT]) output1[i] = m_out_volume*FAUSTFLOAT( sf_inputs[CHRIGHT][i] );
+      output0[i] = FAUSTFLOAT(fTemp0);
       #else
       output0[i] = FAUSTFLOAT(fTemp0);
       #endif
