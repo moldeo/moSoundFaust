@@ -5774,19 +5774,21 @@ public:
     #ifdef MOLDEO_SOUND_FAUST_PLUGIN
 
       if (m_sf_index>=0) {// FILE INDEX
+        cout << "m_sf_index: " << m_sf_index << endl;
         Soundfile* soundf = m_sf_zone[m_sf_index]; // FILE BUFFERS
 
         //AT LEAST ONE CHANNEL
         if (soundf) {
           for( int channel=0; channel < soundf->fChannels; channel++ ) {
-
+            cout << "channel: " << channel << endl;
             int f_actual_offset = soundf->fOffsetRead[channel];
             int f_length = soundf->fLength[channel];
+            cout << "f_actual_offset:length: " << f_actual_offset << ":" << f_length << endl;
 
             //we will read count frames of file and add it to the INPUT (MONO)
             FAUSTFLOAT* sf_input;
             sf_input = &(soundf->fBuffers[ channel ][ f_actual_offset ]);
-
+            cout << "sf_input: " << (long)(sf_input) << endl;
             for( int ii = 0; ii < count; ii++ ) {
               if ( (f_actual_offset+ii) < f_length ) {
                 sf_inputs_max_off[channel] = ii;
