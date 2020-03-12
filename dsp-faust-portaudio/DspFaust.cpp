@@ -5797,9 +5797,11 @@ public:
             }
 
             //forward count frames
+            cout << "forward:count: " << soundf->fOffsetRead[channel] << endl;
             soundf->fOffsetRead[channel] += count;
 
             //file is stereo? ok use it in output
+            //cout << "sf_input: " << sf_inputs[channel] << endl;
             sf_inputs[channel] = sf_input;
           }
         }
@@ -5811,6 +5813,7 @@ public:
 		int iSlow2 = (std::fabs(fSlow1) < 1.1920929e-07f);
 		float fSlow3 = (iSlow2 ? 0.0f : std::exp((0.0f - (fConst1 / (iSlow2 ? 1.0f : fSlow1)))));
 		float fSlow4 = (1.0f - fSlow3);
+    cout << "computing count: " << endl;
 		for (int i = 0; (i < count); i = (i + 1)) {
       #ifdef MOLDEO_SOUND_FAUST_PLUGIN
 			float fTemp0 = m_in_volume*float(input0[i]);
