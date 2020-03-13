@@ -1181,13 +1181,13 @@ moEffectSoundFaust::UpdateParameters() {
         //DMessage(moText("Updating outlet: ") + pout->GetConnectorLabelName());
         for(int k=0; k<pout->GetConnections()->Count();k++) {
           moConnection* pc = pout->GetConnections()->Get(k);
-          DMessage(moText("to: ") + pc->GetDestinationMoldeoLabelName() + ">" + pc->GetDestinationConnectorLabelName());
+          //DMessage(moText("to: ") + pc->GetDestinationMoldeoLabelName() + ">" + pc->GetDestinationConnectorLabelName());
         }
         pout->GetData()->SetDouble(norVal);
         pout->Update(true);
       }
       zp++;
-      DMessage("output zone param p: "+IntToStr(zp)+" zone: " + FloatToStr(zpf->fZone)+" index: "+IntToStr(zpf->fIndex)+ " value: "+FloatToStr(value) );
+      //DMessage("output zone param p: "+IntToStr(zp)+" zone: " + FloatToStr(zpf->fZone)+" index: "+IntToStr(zpf->fIndex)+ " value: "+FloatToStr(value) );
     }
 
     if (m_pOutDataMessages) {
@@ -1334,6 +1334,7 @@ moEffectSoundFaust::UpdateSound( const moText& p_newfilename ) {
             MODebug2->Message("moEffectSoundFaust::UpdateSound > New audio building from file: " + m_pAudio->GetFileName() );
             if (m_pAudio->GetName()!="")
               if (m_pAudio->BuildFromFile( m_pAudio->GetFileName() ) ) {
+
                   DMessage("Adding sound to SoundManager!");
                     m_pSM->AddSound( (moSound*) m_pAudio );
                       DMessage("m_pDspFaust:"+IntToStr((long)m_pDspFaust));
