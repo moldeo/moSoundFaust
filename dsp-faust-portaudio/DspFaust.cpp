@@ -5770,25 +5770,25 @@ public:
 
     FAUSTFLOAT* output0 = outputs[CHLEFT]; // OUTPUT LEFT
     FAUSTFLOAT* output1 = outputs[CHRIGHT]; //OUTPUT RIGHT
-    cout << "computing" << endl;
+    //cout << "computing" << endl;
     #ifdef MOLDEO_SOUND_FAUST_PLUGIN
 
       if (m_sf_index>=0) {// FILE INDEX
-        cout << "m_sf_index: " << m_sf_index << endl;
+        //cout << "m_sf_index: " << m_sf_index << endl;
         Soundfile* soundf = m_sf_zone[m_sf_index]; // FILE BUFFERS
 
         //AT LEAST ONE CHANNEL
         if (soundf) {
           for( int channel=0; channel < soundf->fChannels; channel++ ) {
-            cout << "channel: " << channel << endl;
+            //cout << "channel: " << channel << endl;
             int f_actual_offset = soundf->fOffsetRead[channel];
             int f_length = soundf->fLength[channel];
-            cout << "f_actual_offset:length: " << f_actual_offset << ":" << f_length << endl;
+            //cout << "f_actual_offset:length: " << f_actual_offset << ":" << f_length << endl;
 
             //we will read count frames of file and add it to the INPUT (MONO)
             FAUSTFLOAT* sf_input;
             sf_input = &(soundf->fBuffers[ channel ][ f_actual_offset ]);
-            cout << "sf_input: " << (long)(sf_input) << endl;
+            //cout << "sf_input: " << (long)(sf_input) << endl;
             for( int ii = 0; ii < count; ii++ ) {
               if ( (f_actual_offset+ii) < f_length ) {
                 sf_inputs_max_off[channel] = ii;
@@ -5798,7 +5798,7 @@ public:
 
             //forward count frames
             soundf->fOffsetRead[channel] += count;
-            cout << "forward:count: " << soundf->fOffsetRead[channel] << endl;
+            //cout << "forward:count: " << soundf->fOffsetRead[channel] << endl;
 
             //file is stereo? ok use it in output
             //cout << "sf_input: " << sf_inputs[channel] << endl;
@@ -5813,7 +5813,7 @@ public:
 		int iSlow2 = (std::fabs(fSlow1) < 1.1920929e-07f);
 		float fSlow3 = (iSlow2 ? 0.0f : std::exp((0.0f - (fConst1 / (iSlow2 ? 1.0f : fSlow1)))));
 		float fSlow4 = (1.0f - fSlow3);
-    cout << "computing count: " << count << endl;
+    //cout << "computing count: " << count << endl;
 		for (int i = 0; (i < count); i = (i + 1)) {
       #ifdef MOLDEO_SOUND_FAUST_PLUGIN
 			float fTemp0 = m_in_volume*float(input0[i]);
@@ -5950,7 +5950,7 @@ public:
       #ifdef MOLDEO_SOUND_FAUST_PLUGIN
       //if (sf_inputs[CHLEFT] && i<=sf_inputs_max_off[CHLEFT] ) output0[i] = m_out_volume*FAUSTFLOAT( sf_inputs[CHLEFT][i] );
       //if (sf_inputs[CHRIGHT] && i<=sf_inputs_max_off[CHRIGHT]) output1[i] = m_out_volume*FAUSTFLOAT( sf_inputs[CHRIGHT][i] );
-      output0[i] = FAUSTFLOAT(fTemp0);
+      output0[i] = m_out_volume*FAUSTFLOAT(fTemp0);
       #else
       output0[i] = FAUSTFLOAT(fTemp0);
       #endif

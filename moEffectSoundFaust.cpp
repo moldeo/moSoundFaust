@@ -942,6 +942,7 @@ MOboolean moEffectSoundFaust::Init() {
       m_pDspFaust = new DspFaust(44100, 512);
       DMessage("Init > Static Dsp Faust Created");
   #endif
+      cout << (long)m_pDspFaust << endl;
     if (m_pDspFaust) {
 
       //check here if we have files, load them!
@@ -972,7 +973,7 @@ MOboolean moEffectSoundFaust::Init() {
       for(int i=0;i<m_pSM->GetSoundCount(); i++) {
         moSoundFaustAudio* m_pAudio = (moSoundFaustAudio*)m_pSM->GetSound(i);
         if (m_pAudio && m_pDspFaust) {
-          int ret_index = m_pDspFaust->addSoundfile( m_pAudio->GetName(), m_pAudio->GetName() );
+          int ret_index = m_pDspFaust->addSoundfile( m_pAudio->GetName(), m_pAudio->GetFileName() );
           if (ret_index>=0) {
             m_pAudio->m_SoundfileIndex = ret_index;
             m_pAudio->m_pSoundfile = m_pDspFaust->getSoundfile(m_pAudio->m_SoundfileIndex);
@@ -1180,13 +1181,13 @@ moEffectSoundFaust::UpdateParameters() {
         //DMessage(moText("Updating outlet: ") + pout->GetConnectorLabelName());
         for(int k=0; k<pout->GetConnections()->Count();k++) {
           moConnection* pc = pout->GetConnections()->Get(k);
-          //DMessage(moText("to: ") + pc->GetDestinationMoldeoLabelName() + ">" + pc->GetDestinationConnectorLabelName());
+          DMessage(moText("to: ") + pc->GetDestinationMoldeoLabelName() + ">" + pc->GetDestinationConnectorLabelName());
         }
         pout->GetData()->SetDouble(norVal);
         pout->Update(true);
       }
       zp++;
-      //DMessage("output zone param p: "+IntToStr(zp)+" zone: " + FloatToStr(zpf->fZone)+" index: "+IntToStr(zpf->fIndex)+ " value: "+FloatToStr(value) );
+      DMessage("output zone param p: "+IntToStr(zp)+" zone: " + FloatToStr(zpf->fZone)+" index: "+IntToStr(zpf->fIndex)+ " value: "+FloatToStr(value) );
     }
 
     if (m_pOutDataMessages) {
